@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1046</width>
+    <height>851</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Joystick 2 ValueCurve</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="joystick2vc.qrc">
+    <normaloff>:/joystick2vc/joystick2vc.png</normaloff>:/joystick2vc/joystick2vc.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QCustomPlot" name="valuesPlot" native="true"/>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Read Rate</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="spinBoxDelay">
+        <property name="suffix">
+         <string>ms</string>
+        </property>
+        <property name="minimum">
+         <number>100</number>
+        </property>
+        <property name="maximum">
+         <number>10000</number>
+        </property>
+        <property name="singleStep">
+         <number>100</number>
+        </property>
+        <property name="value">
+         <number>200</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonStart">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Start</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonStop">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Stop</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonReset">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Reset</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1046</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionSave_X"/>
+    <addaction name="actionSave_Y"/>
+    <addaction name="separator"/>
+    <addaction name="actionClose"/>
+   </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>About</string>
+    </property>
+    <addaction name="actionAbout"/>
+    <addaction name="actionOpen_Logs"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuAbout"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionClose">
+   <property name="icon">
+    <iconset resource="joystick2vc.qrc">
+     <normaloff>:/joystick2vc/icons/cancel.png</normaloff>:/joystick2vc/icons/cancel.png</iconset>
+   </property>
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </action>
+  <action name="actionOpen_Logs">
+   <property name="icon">
+    <iconset resource="joystick2vc.qrc">
+     <normaloff>:/joystick2vc/icons/script.png</normaloff>:/joystick2vc/icons/script.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open Logs...</string>
+   </property>
+  </action>
+  <action name="actionSetShowFolder">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/ControllerBackup/icons/folder.png</normaloff>:/ControllerBackup/icons/folder.png</iconset>
+   </property>
+   <property name="text">
+    <string>Set Show Folder...</string>
+   </property>
+  </action>
+  <action name="actionOpen_Explorer">
+   <property name="text">
+    <string>Open Explorer</string>
+   </property>
+  </action>
+  <action name="actionImport_PartList">
+   <property name="text">
+    <string>PartList CSV...</string>
+   </property>
+  </action>
+  <action name="actionImport_Rename_Map">
+   <property name="text">
+    <string>Rename CSV...</string>
+   </property>
+  </action>
+  <action name="actionReload_Project">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/ControllerBackup/icons/arrow_refresh_small.png</normaloff>:/ControllerBackup/icons/arrow_refresh_small.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reload Project</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="icon">
+    <iconset resource="joystick2vc.qrc">
+     <normaloff>:/joystick2vc/joystick2vc.png</normaloff>:/joystick2vc/joystick2vc.png</iconset>
+   </property>
+   <property name="text">
+    <string>About...</string>
+   </property>
+  </action>
+  <action name="actionImport_Parts_from_Schematic">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/ControllerBackup/icons/report_add.png</normaloff>:/ControllerBackup/icons/report_add.png</iconset>
+   </property>
+   <property name="text">
+    <string>PartList from Schematic...</string>
+   </property>
+  </action>
+  <action name="actionExport_PartList_CSV">
+   <property name="text">
+    <string>PartList CSV...</string>
+   </property>
+  </action>
+  <action name="actionExport_Rename_CSV">
+   <property name="text">
+    <string>Rename CSV...</string>
+   </property>
+  </action>
+  <action name="actionOverride">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Override Existing Parts</string>
+   </property>
+  </action>
+  <action name="actionSet_Library_Folder">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/ControllerBackup/icons/folder_table.png</normaloff>:/ControllerBackup/icons/folder_table.png</iconset>
+   </property>
+   <property name="text">
+    <string>Set Library Folder</string>
+   </property>
+  </action>
+  <action name="actionLibrary_Report">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/ControllerBackup/icons/report_go.png</normaloff>:/ControllerBackup/icons/report_go.png</iconset>
+   </property>
+   <property name="text">
+    <string>Library Report...</string>
+   </property>
+  </action>
+  <action name="actionBOM_CSV">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/ControllerBackup/icons/table.png</normaloff>:/ControllerBackup/icons/table.png</iconset>
+   </property>
+   <property name="text">
+    <string>BOM CSV...</string>
+   </property>
+  </action>
+  <action name="actionClear">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/ControllerBackup/icons/cross.png</normaloff>:/ControllerBackup/icons/cross.png</iconset>
+   </property>
+   <property name="text">
+    <string>Clear</string>
+   </property>
+  </action>
+  <action name="actionDownload_EEPROM">
+   <property name="text">
+    <string>Download EEPROM...</string>
+   </property>
+  </action>
+  <action name="actionSetup_xLights_from_Configs">
+   <property name="text">
+    <string>Setup xLights from Configs</string>
+   </property>
+  </action>
+  <action name="actionSave_X">
+   <property name="icon">
+    <iconset resource="joystick2vc.qrc">
+     <normaloff>:/joystick2vc/icons/disk.png</normaloff>:/joystick2vc/icons/disk.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save Value Curve...</string>
+   </property>
+  </action>
+  <action name="actionSave_Y">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Save Y...</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QCustomPlot</class>
+   <extends>QWidget</extends>
+   <header>./src/qcustomplot/qcustomplot.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="joystick2vc.qrc"/>
+ </resources>
+ <connections/>
+</ui>
