@@ -2,6 +2,8 @@
 
 A tool to record joystick movements to xLights ValueCurves.
 
+![Gif](/j2vc.gif)
+
 ### Building
 Uses C++23, QT 5.15, spdlog, and cMake 3.20.
 
