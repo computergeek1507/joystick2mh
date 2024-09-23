@@ -44,13 +44,22 @@ jobs:
         name: joystick2vc
         path: 'res\installer\output\**'
 
-    - name: Create prerelease
+    - name: Create prerelease2
       if: github.ref == 'refs/heads/main'
-      uses: marvinpinto/action-automatic-releases@latest
+      uses: softprops/action-gh-release@v2
       with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
         prerelease: true
-        automatic_release_tag: "ci_win"
-        title: "${{ steps.version.outputs.version }}"
-        files: |        
-          ./res/installer/output/*.exe
+        tag_name: "ci_win"
+        name: "${{ steps.version.outputs.version }}"
+        files: ./res/installer/output/*.exe
+      
+#    - name: Create prerelease
+#      if: github.ref == 'refs/heads/main'
+#      uses: marvinpinto/action-automatic-releases@latest
+#      with:
+#        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+#        prerelease: true
+#        automatic_release_tag: "ci_win"
+#        title: "${{ steps.version.outputs.version }}"
+#        files: |        
+#          ./res/installer/output/*.exe
