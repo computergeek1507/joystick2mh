@@ -39,7 +39,7 @@ jobs:
       run: ISCC.exe joystick2vc.iss
 
     - name: Upload Installer
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: joystick2vc
         path: 'res\installer\output\**'
