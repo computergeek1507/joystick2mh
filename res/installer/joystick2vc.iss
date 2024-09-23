@@ -28,6 +28,7 @@ Source: "..\..\cmake_vs\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\cmake_vs\Release\platforms\*.dll"; DestDir: "{app}\platforms\"; Flags: ignoreversion  
 Source: "..\..\cmake_vs\Release\imageformats\*.dll"; DestDir: "{app}\imageformats\"; Flags: ignoreversion
 Source: "..\..\cmake_vs\Release\styles\*.dll"; DestDir: "{app}\styles\"; Flags: ignoreversion
+Source: "..\..\cmake_vs\Release\gamepads\*.dll"; DestDir: "{app}\gamepads\"; Flags: ignoreversion
 Source: "..\..\cmake_vs\Release\translations\*.qm"; DestDir: "{app}\translations\"; Flags: ignoreversion
 
 [Icons]
