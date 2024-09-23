@@ -1,6 +1,4 @@
-#ifndef ARTNETOUTPUT_H
-#define ARTNETOUTPUT_H
-
+#pragma once
 #include "IPOutput.h"
 
 #include <QString>
@@ -24,5 +22,3 @@ struct ArtNetOutput : IPOutput
 	uint8_t _data[ARTNET_PACKET_LEN];
 	uint8_t _sequenceNum { 0 };
 };
-
-#endif

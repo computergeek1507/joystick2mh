@@ -1,6 +1,4 @@
-#ifndef OUTPUTMANAGER_H
-#define OUTPUTMANAGER_H
-
+#pragma once
 #include "BaseOutput.h"
 
 #include "spdlog/spdlog.h"
@@ -9,6 +7,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QThread>
+#include <QSettings>
 
 #include <memory>
 #include <vector>
@@ -23,6 +22,9 @@ public:
 
     OutputManager();
     ~OutputManager();
+
+    void ReadSettings(QSettings* sett);
+    void SaveSettings(QSettings* sett);
     bool LoadOutput(QString const& type, QString const& ipAddress, uint32_t const& start_universe, uint32_t const& start_channel, uint32_t const& universe_size);
 
     bool OpenOutputs();
@@ -33,7 +35,7 @@ public Q_SLOTS:
     void TriggerTimedOutputData();
     void StopDataOut();
     void StartDataOut();
-    void SetData(uint16_t chan , uint8_t value);
+    void SetData(uint16_t chan, uint8_t value);
 
 Q_SIGNALS:
     void AddController(bool enabled, QString const& type, QString const& ip, QString const& channels);
@@ -49,5 +51,3 @@ private:
 
     char m_seqData[MAX_CHANNELS];
 };
-
-#endif

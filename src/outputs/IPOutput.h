@@ -1,5 +1,4 @@
-#ifndef IPOUTPUT_H
-#define IPOUTPUT_H
+#pragma once
 
 #include "BaseOutput.h"
 
@@ -13,5 +12,3 @@ struct IPOutput : BaseOutput
 	IPOutput():m_UdpSocket(std::make_unique<QUdpSocket>()) {}
 	std::unique_ptr<QUdpSocket> m_UdpSocket;
 };
-
-#endif

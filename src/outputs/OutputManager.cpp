@@ -24,7 +24,7 @@ OutputManager::OutputManager():
 	m_playbackTimer->moveToThread(&m_playbackThread);
 
 	connect(&m_playbackThread, SIGNAL(started()), m_playbackTimer.get(), SLOT(start()));
-	connect(m_playbackTimer.get(), SIGNAL(timeout()), this, SLOT(TriggerOutputData()));
+	connect(m_playbackTimer.get(), SIGNAL(timeout()), this, SLOT(TriggerTimedOutputData()));
 	connect(this, SIGNAL(finished()), m_playbackTimer.get(), SLOT(stop()));
 	connect(this, SIGNAL(finished()), &m_playbackThread, SLOT(quit()));
 
@@ -73,6 +73,7 @@ bool OutputManager::OpenOutputs()
 {
 	//for (auto const& o : m_outputs)
 	//{
+	if (m_output)
 		m_output->Open();
 	//}
 	return true;
@@ -82,6 +83,7 @@ void OutputManager::CloseOutputs()
 {
 	//for (auto const& o : m_outputs)
 	//{
+	if (m_output)
 		m_output->Close();
 	//}
 }
@@ -91,13 +93,32 @@ void OutputManager::OutputData(uint8_t* data)
 	//TODO: multithread
 	//for (auto const& o : m_outputs)
 	//{
+	if(m_output)
 		m_output->OutputFrame(data);
 	//}
 }
 
+void OutputManager::ReadSettings(QSettings* sett)
+{
+	sett->beginGroup("output");
+	auto stype = sett->value("out_type").toString();
+	auto ipaddress = sett->value("ip_address").toString();
+	auto start_channel = sett->value("start_channel", 1).toUInt();
+	auto start_universe = sett->value("start_universe", 1).toUInt();
+	auto universe_size = sett->value("universe_size", 512).toUInt();
+	LoadOutput(stype, ipaddress, start_universe, start_channel, universe_size);
+	sett->endGroup();
+}
+
+void OutputManager::SaveSettings(QSettings* sett)
+{
+	//sett->beginGroup("output");
+	
+	//sett->endGroup();
+}
+
 bool OutputManager::LoadOutput(QString const& type, QString const& ipAddress, uint32_t const& start_universe, uint32_t const& start_channel, uint32_t const& universe_size)
 {
-
 	if ("DDP" == type)
 	{
 		auto ddp = std::make_unique<DDPOutput>();

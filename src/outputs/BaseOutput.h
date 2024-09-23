@@ -1,6 +1,4 @@
-#ifndef BASEOUTPUT_H
-#define BASEOUTPUT_H
-
+#pragma once
 #include <QObject>
 #include <QString>
 
@@ -19,5 +17,3 @@ public:
 	QString IP;
 	//bool Enabled{true};
 };
-
-#endif

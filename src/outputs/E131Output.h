@@ -1,6 +1,4 @@
-#ifndef E131OUTPUT_H
-#define E131OUTPUT_H
-
+#pragma once
 #include "IPOutput.h"
 
 #include <QString>
@@ -25,5 +23,3 @@ struct E131Output : IPOutput
 	uint8_t _data[E131_PACKET_LEN];
 	uint8_t _sequenceNum { 0 };
 };
-
-#endif

@@ -1,6 +1,4 @@
-#ifndef DDPOUTPUT_H
-#define DDPOUTPUT_H
-
+#pragma once
 #include "IPOutput.h"
 
 #include <QString>
@@ -42,5 +40,3 @@ struct DDPOutput : IPOutput
 	uint16_t PacketSize{1440};
 	bool KeepChannels{true};
 };
-
-#endif

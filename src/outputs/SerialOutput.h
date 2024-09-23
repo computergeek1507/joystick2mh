@@ -1,6 +1,4 @@
-#ifndef SERIALOUTPUT_H
-#define SERIALOUTPUT_H
-
+#pragma once
 #include "BaseOutput.h"
 
 #include <QString>
@@ -15,5 +13,3 @@ struct SerialOutput : BaseOutput
 
 	int BaudRate { 9600 };
 };
-
-#endif

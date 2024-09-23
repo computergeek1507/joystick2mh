@@ -1,6 +1,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "model_data.h"
+#include "outputs/OutputManager.h"
+
 #include <QMainWindow>
 #include <QSettings>
 #include <QtGamepad/QGamepad>
@@ -21,6 +24,8 @@ class QGamepad;
 class QTimer;
 QT_END_NAMESPACE
 
+
+
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
@@ -31,6 +36,7 @@ public:
 
 public Q_SLOTS:
 
+	void on_actionImport_Model_triggered();
 	void on_actionSave_X_triggered();
 	void on_actionSave_Y_triggered();
 	void on_actionClose_triggered();
@@ -40,25 +46,24 @@ public Q_SLOTS:
 	void on_pushButtonStart_clicked();
 	void on_pushButtonStop_clicked();
 	void on_pushButtonReset_clicked();
+	void on_checkBoxOutput_stateChanged(int state) ;
 	void LoadControllers();
 	void ReadJoystick();
 	void DrawPlot();
 
-	QString CreateVCDate();
-	void writeXMLFile(QString const& xmlFileName);
-
-		void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
+	void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
 
 private:
 	Ui::MainWindow *m_ui;
 	std::shared_ptr<spdlog::logger> m_logger{ nullptr };
 	std::unique_ptr<QSettings> m_settings{ nullptr };
+	std::unique_ptr<ModelData> m_model{ nullptr };
+	std::unique_ptr < OutputManager> m_output{ nullptr };
 	QString m_appdir;
 
 	std::unique_ptr <QGamepad> m_gamepad{ nullptr };
 	QTimer* m_controllerReader{ nullptr };
 
-	std::vector<std::pair<int, double>> m_values;
 	void OpenFile(QString const& path);
 
 };

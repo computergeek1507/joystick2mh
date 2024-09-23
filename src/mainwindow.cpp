@@ -4,25 +4,20 @@
 
 #include "config.h"
 
-#include <QMessageBox>
-#include <QDesktopServices>
-#include <QFileDialog>
-#include <QTextStream>
-#include <QListWidget>
-#include <QListWidgetItem>
-#include <QTableWidget>
+
+//#include <QMessageBox>
+//#include <QDesktopServices>
+//#include <QFileDialog>
+//#include <QTextStream>
+//#include <QTableWidget>
 #include <QThread>
-#include <QInputDialog>
-#include <QCommandLineParser>
+//#include <QInputDialog>
 #include <QTimer>
-#include <QJsonObject>
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
+//
+//#include <QNetworkAccessManager>
+//#include <QNetworkReply>
 #include <QStandardPaths>
-#include <QOperatingSystemVersion>
-#include <QDomDocument>
+//#include <QOperatingSystemVersion>
 
 
 #include "spdlog/spdlog.h"
@@ -68,7 +63,12 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m_settings = std::make_unique< QSettings>(m_appdir + "/settings.txt", QSettings::IniFormat);
 
-	
+	m_model = std::make_unique< ModelData>(m_settings.get());
+
+	m_output = std::make_unique< OutputManager>();
+	m_output->ReadSettings(m_settings.get());
+	connect(m_model.get(), &ModelData::SetChannelData, m_output.get(), &OutputManager::SetData);
+
 
 	m_controllerReader = new QTimer (this);
 	connect(m_controllerReader, &QTimer::timeout, this, &MainWindow::ReadJoystick);
@@ -84,6 +84,9 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+	m_model->SaveSettings(m_settings.get());
+	m_output->SaveSettings(m_settings.get());
+	m_settings->sync();
 	delete m_ui;
 }
 
@@ -115,12 +118,40 @@ void MainWindow::LoadControllers()
 		connect(m_gamepad.get(), &QGamepad::buttonXChanged, this, [&](bool pressed) {
 			on_pushButtonReset_clicked();
 			});
+
+		connect(m_gamepad.get(), &QGamepad::buttonDownChanged, this, [&](bool pressed) {
+			m_model->ChangeColor(Qt::white);
+			});
+		connect(m_gamepad.get(), &QGamepad::buttonUpChanged, this, [&](bool pressed) {
+			m_model->ChangeColor(Qt::green);
+			});
+		connect(m_gamepad.get(), &QGamepad::buttonLeftChanged, this, [&](bool pressed) {
+			m_model->ChangeColor(Qt::red);
+			});
+		connect(m_gamepad.get(), &QGamepad::buttonRightChanged, this, [&](bool pressed) {
+			m_model->ChangeColor(Qt::blue);
+			});
+		connect(m_gamepad.get(), &QGamepad::buttonR1Changed, this, [&](bool pressed) {
+			m_model->ChangeColor(Qt::black);
+			});
 	}
 	else 
 	{
 		LogMessage("No Controller Found",spdlog::level::warn);
 		QMessageBox::warning(this, "No Controller", "No Controller Found");
 	}
+}
+
+void MainWindow::on_actionImport_Model_triggered()
+{
+	QString const filename = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation) + QDir::separator() + "ValueCurve.xvc";
+
+	QString const path = QFileDialog::getOpenFileName(this, tr("Open Model Files"), filename, tr("Model Files (*.xmodel);;All files (*.*)"));
+	if (path.isEmpty())
+	{
+		return;
+	}
+	m_model->OpenModelFile(path);
 }
 
 void MainWindow::on_actionSave_X_triggered()
@@ -132,7 +163,7 @@ void MainWindow::on_actionSave_X_triggered()
 	{
 		return;
 	}
-	writeXMLFile(path);
+	m_model->WriteXMLFile(path);
 }
 
 void MainWindow::on_actionSave_Y_triggered() 
@@ -175,15 +206,32 @@ void MainWindow::on_pushButtonStop_clicked()
 
 void MainWindow::on_pushButtonReset_clicked()
 {
-	m_values.clear();
+	m_model->ClearData();
 	DrawPlot();
+}
+
+void MainWindow::on_checkBoxOutput_stateChanged(int state)
+{
+	if (m_output)
+	{
+		if (state)
+		{
+			m_output->OpenOutputs();
+			m_output->StartDataOut();
+		}
+		else 
+		{
+			m_output->StopDataOut();
+		}
+	}
 }
 
 void MainWindow::ReadJoystick()
 {
 	if (m_gamepad) 
 	{
-		m_values.emplace_back(m_ui->spinBoxDelay->value(), -m_gamepad->axisLeftY());
+		m_model->AddPanTilt(m_ui->spinBoxDelay->value(), m_gamepad->axisLeftX(), -m_gamepad->axisLeftY() );
+		m_model->AddColor(m_ui->spinBoxDelay->value());
 	}
 	DrawPlot();
 }
@@ -196,11 +244,11 @@ void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum ll
 void MainWindow::DrawPlot()
 {
 	m_ui->valuesPlot->yAxis->setRange(-0.2, 1.2);
-
+	auto const& panTilt = m_model->GetPanTiltValues();
 	QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
 	m_ui->valuesPlot->xAxis->setTicker(fixedTicker);
 	m_ui->valuesPlot->xAxis->setLabel("Points");
-	m_ui->valuesPlot->xAxis->setRange(0, (m_values.size() + 1));
+	m_ui->valuesPlot->xAxis->setRange(0, (panTilt.size() + 1));
 	m_ui->valuesPlot->xAxis2->setVisible(true);
 	m_ui->valuesPlot->xAxis->setVisible(false);
 	m_ui->valuesPlot->xAxis2->setTicks(false);
@@ -210,71 +258,39 @@ void MainWindow::DrawPlot()
 	m_ui->valuesPlot->clearGraphs();
 
 	int offset = 0;
-	auto AddTesterPointGraph = [&](std::vector<std::pair<int, double>> const& data)
+	auto AddTesterPointGraph = [&](std::vector<PTDataPoint> const& data)
 		{
 			int size = data.size();
-			QVector<double> x(size), y(size);
+			QVector<double> x1(size), y1(size);
+			QVector<double> x2(size), y2(size);
 
 			for (int i = 0; i < size; ++i)
 			{
-				x[i] = offset + i + 1;
-				y[i] = data[i].second;
+				x1[i] = offset + i + 1;
+				y1[i] = data[i].pan;
+				x2[i] = offset + i + 1;
+				y2[i] = data[i].tilt;
 			}
 			auto ngr = m_ui->valuesPlot->addGraph();
-			ngr->setName("X");
+			ngr->setName("Pan");
 			ngr->setPen(QPen(Qt::red));
 			ngr->setLineStyle(QCPGraph::lsLine);
 			ngr->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 4));
-			ngr->setData(x, y);
+			ngr->setData(x1, y1);
+
+			auto ngr2 = m_ui->valuesPlot->addGraph();
+			ngr2->setName("Tilt");
+			ngr2->setPen(QPen(Qt::blue));
+			ngr2->setLineStyle(QCPGraph::lsLine);
+			ngr2->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 4));
+			ngr2->setData(x2, y2);
 			offset += size;
 		};
-	AddTesterPointGraph(m_values);	
+	AddTesterPointGraph(panTilt);
 	m_ui->valuesPlot->legend->setVisible(true);
 	m_ui->valuesPlot->replot();
 }
 
-QString MainWindow::CreateVCDate()
-{
-	int totalLength = 0;
-	for (auto const[interval, range]: m_values)
-	{
-		totalLength += interval;
-	}
-	int curLen = 0;
-	//data="Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=0.00:0.30;0.85:0.38;1.00:0.44|"
-	QString vc = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
-	for (auto const [interval, range] : m_values)
-	{
-		//totalLength += interval;
-		vc += QString("%1:%2;").arg(curLen/(double)totalLength, 0, 'f', 2).arg(range, 0, 'f', 2);
-		curLen += interval;
-	}
-	vc = vc.left(vc.count() - 1);
-	vc += "|";
-	return vc;
-}
-
-void MainWindow::writeXMLFile(QString const& xmlFileName) 
-{
-	QString vc_data = CreateVCDate();
-	QFile xmlFile(xmlFileName);
-	if (!xmlFile.open(QFile::WriteOnly | QFile::Text))
-	{
-		xmlFile.close();
-		LogMessage("Failed to Save File", spdlog::level::warn);
-		QMessageBox::warning(this, "Failed to Save File: "+ xmlFileName, "Failed to Save File\n" + xmlFileName);
-		return;
-	}
-	QTextStream xmlContent(&xmlFile);
-	QDomDocument document;
-	document.createProcessingInstruction("xml", "version=\"1.0\" encoding=\"utf-8\"");
-	QDomElement valuecurve = document.createElement("valuecurve");
-	valuecurve.setAttribute("data", vc_data);
-	valuecurve.setAttribute("SourceVersion", "2024.15");
-	document.appendChild(valuecurve);
-	xmlContent << document.toString();
-	xmlFile.close();
-}
 
 void MainWindow::OpenFile(QString const& path)
 {

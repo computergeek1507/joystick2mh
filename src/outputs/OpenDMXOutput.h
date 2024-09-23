@@ -1,6 +1,4 @@
-#ifndef OPENDMXOUTPUT_H
-#define OPENDMXOUTPUT_H
-
+#pragma once
 #include "SerialOutput.h"
 
 #include <QString>
@@ -18,5 +16,3 @@ struct OpenDMXOutput : SerialOutput
 
 	uint8_t _data[OPENDMX_MAX_CHANNELS + 1];
 };
-
-#endif
