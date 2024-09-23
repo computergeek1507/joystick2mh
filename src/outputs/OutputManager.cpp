@@ -7,8 +7,66 @@
 #include "OpenDMXOutput.h"
 
 OutputManager::OutputManager():
-	m_logger(spdlog::get("joystick2vc"))
+	m_logger(spdlog::get("joystick2vc")),
+	m_playbackTimer(std::make_unique<QTimer>(this))
 {
+
+	memset(m_seqData, 0, sizeof(m_seqData));
+
+	//m_playbackTimer = std::make_unique<QTimer>(this);
+	m_playbackTimer->setTimerType(Qt::PreciseTimer);
+	m_playbackTimer->setInterval(50);
+
+	//m_playbackThread = std::make_unique<QThread>(this);
+	//moveToThread(&m_playbackThread);
+	//m_playbackTimer->moveToThread(&m_playbackThread);
+	//this->moveToThread(thread);
+	m_playbackTimer->moveToThread(&m_playbackThread);
+
+	connect(&m_playbackThread, SIGNAL(started()), m_playbackTimer.get(), SLOT(start()));
+	connect(m_playbackTimer.get(), SIGNAL(timeout()), this, SLOT(TriggerOutputData()));
+	connect(this, SIGNAL(finished()), m_playbackTimer.get(), SLOT(stop()));
+	connect(this, SIGNAL(finished()), &m_playbackThread, SLOT(quit()));
+
+}
+
+OutputManager::~OutputManager()
+{
+	m_playbackTimer->stop();
+	m_playbackThread.requestInterruption();
+	m_playbackThread.quit();
+	m_playbackThread.wait();
+	//delete m_seqFile;
+}
+
+void OutputManager::TriggerTimedOutputData()
+{
+	OutputData((uint8_t*)m_seqData);
+	//m_lastFrameData = m_seqFile->getFrame(m_lastFrameRead);
+}
+
+void OutputManager::StopDataOut()
+{
+	m_playbackTimer->stop();
+	m_playbackThread.requestInterruption();
+	m_playbackThread.quit();
+	m_playbackThread.wait();
+
+
+	//stop timer
+		CloseOutputs();
+
+}
+
+void OutputManager::SetData(uint16_t chan, uint8_t value)
+{
+	m_seqData[chan - 1] = value;
+}
+
+void OutputManager::StartDataOut()
+{
+	m_playbackTimer->setInterval(m_seqStepTime);
+	m_playbackThread.start();
 }
 
 bool OutputManager::OpenOutputs()

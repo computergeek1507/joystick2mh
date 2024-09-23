@@ -7,7 +7,7 @@ DMXOutput::DMXOutput()
 
 bool DMXOutput::Open()
 {
-    if (!Enabled) return false;
+    //if (!Enabled) return false;
 
     m_SerialPort->setPortName(IP);
     m_SerialPort->setBaudRate(BaudRate);
@@ -29,7 +29,7 @@ void DMXOutput::Close()
 
 void DMXOutput::OutputFrame(uint8_t* data)
 {
-    if (!Enabled || m_SerialPort == nullptr || m_SerialPort->isOpen()) return;
+    if ( m_SerialPort == nullptr || m_SerialPort->isOpen()) return;
 
     size_t chs = std::min((size_t)Channels, (size_t)(DMX_MAX_CHANNELS));
 
