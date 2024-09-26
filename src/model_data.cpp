@@ -38,9 +38,24 @@ void ModelData::ReadSettings(QSettings* sett)
 	m_pan->orient_home = sett->value("orient_home", 90).toInt();
 	m_pan->reverse = sett->value("reverse", false).toBool();
 	sett->endGroup();
+
+	sett->beginGroup("color");
+	auto col_mode = sett->value("mode", 0).toInt();
+	switch (col_mode) {
+	case 0:
+		m_color = std::make_unique<DmxColorRGB>();
+		m_color->ReadSettings(sett);
+		break;
+	case 1:
+		m_color = std::make_unique<DmxColorWheel>();
+		m_color->ReadSettings(sett);
+		break;
+
+	}
+	sett->endGroup();
 }
 
-void ModelData::SaveSettings(QSettings* sett) 
+void ModelData::SaveSettings(QSettings* sett) const
 {
 	sett->beginGroup("tilt");
 	sett->setValue("channel_coarse", m_tilt->channel_coarse);
@@ -63,12 +78,17 @@ void ModelData::SaveSettings(QSettings* sett)
 	sett->setValue("orient_home", m_pan->orient_home);
 	sett->setValue("reverse", m_pan->reverse);
 	sett->endGroup();
+
+	sett->beginGroup("color");
+	m_color->SaveSettings(sett);
+	sett->endGroup();
 }
 
 void ModelData::ClearData()
 {
-	m_wheel_values.clear();
-	m_rgb_values.clear();
+	//m_wheel_values.clear();
+	//m_rgb_values.clear();
+	m_color_values.clear();
 	m_pt_values.clear();
 	m_last_color = QColor(Qt::black);
 }
@@ -85,9 +105,18 @@ void ModelData::AddColor(int time_ms)
 	//auto& pt = m_pt_values.emplace_back(time_ms, pan, tilt);
 	//auto& pt = m_pt_values.emplace_back(time_ms, pan, tilt);
 	//CalcPanTiltDMX(pt);
+	m_color_values.emplace_back(time_ms, m_last_color);
+	if (m_color) {
+		//m_color->SetColorPixels(m_last_color)
+	}
 }
 
-void ModelData::ChangeColor(QColor color) {m_last_color = color;}
+void ModelData::ChangeColor(QColor color) {
+	m_last_color = color;
+	if (m_color) {
+		//m_color->SetColorPixels(m_last_color);
+	}
+}
 
 void ModelData::CalcPanTiltDMX(PTDataPoint& point)
 {
@@ -177,6 +206,17 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 	QXmlStreamReader xmlReader(&file);
 	QString currentElementName;
 
+	auto SetBoolValue = [](const QXmlStreamAttributes& attributes, QString const& parm, bool& value) {
+		if (attributes.hasAttribute(parm))
+		{
+			bool ok{ false };
+			auto const val = attributes.value(parm).toInt(&ok);
+			if (ok)
+			{
+				value = val;
+			}
+		}
+		};
 	auto SetIntValue = [](const QXmlStreamAttributes& attributes, QString const& parm, int& value) {
 		if (attributes.hasAttribute(parm))
 		{
@@ -188,6 +228,18 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 			}
 		}
 	};
+
+	auto SetUIntValue = [](const QXmlStreamAttributes& attributes, QString const& parm, uint32_t& value) {
+		if (attributes.hasAttribute(parm))
+		{
+			bool ok{ false };
+			auto const val = attributes.value(parm).toUInt(&ok);
+			if (ok)
+			{
+				value = val;
+			}
+		}
+		};
 
 	auto SetDoubleValue = [](const QXmlStreamAttributes& attributes, QString const& parm, double& value) {
 		if (attributes.hasAttribute(parm))
@@ -217,7 +269,70 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 					{
 						SetDoubleValue(attributes, "DmxPanDegOfRot", m_pan->range_of_motion);
 					}
+					if (type == "DmxMovingHeadAdv")
+					{
+						//SetDoubleValue(attributes, "DmxPanDegOfRot", m_pan->range_of_motion);
+						if (attributes.hasAttribute("DmxColorType"))
+						{
+							
+							auto const val = attributes.value("DmxColorType");
+							if (val == "0")
+							{
+								auto rgbcolor = std::make_unique<DmxColorRGB>();
+								SetUIntValue(attributes, "DmxRedChannel", rgbcolor->red_channel);
+								SetUIntValue(attributes, "DmxGreenChannel", rgbcolor->green_channel);
+								SetUIntValue(attributes, "DmxBlueChannel", rgbcolor->blue_channel);
+								SetUIntValue(attributes, "DmxWhiteChannel", rgbcolor->white_channel);
+								m_color = std::move(rgbcolor);
+							}
+							else if (val == "1")
+							{
+								auto wheelcolor = std::make_unique<DmxColorWheel>();
+								SetUIntValue(attributes, "DmxColorWheelChannel", wheelcolor->wheel_channel);
+								SetUIntValue(attributes, "DmxDimmerChannel", wheelcolor->dimmer_channel);
+								for (int k =0;k<100;++k) 
+								{
+									auto wheelColParm = QString("DmxColorWheelColor%1").arg(k);
+									auto wheelDMXParm = QString("DmxColorWheelDMX%1").arg(k);
+									if (!attributes.hasAttribute("DisplayAs") && !attributes.hasAttribute("DisplayAs"))
+									{
+										break;
+									}
+
+									auto color = attributes.value(wheelColParm);
+									auto dmx = attributes.value(wheelDMXParm).toUInt();
+									wheelcolor->colors.emplace_back(QColor(color), dmx);
+								}
+								//DmxColorWheelColor13="#c0c0c0" DmxColorWheelDMX13="104"
+								m_color = std::move(wheelcolor);
+							}
+						}
+						//"DmxColorType"
+
+					}
 				}
+			}
+			if (currentElementName == "PanMotor")
+			{
+				auto const& attributes = xmlReader.attributes();
+				SetIntValue(attributes, "ChannelCoarse", m_pan->channel_coarse);
+				SetIntValue(attributes, "ChannelFine", m_pan->channel_fine);
+				SetIntValue(attributes, "MinLimit", m_pan->min_limit);
+				SetIntValue(attributes, "OrientZero", m_pan->orient_zero);
+				SetIntValue(attributes, "OrientHome", m_pan->orient_home);
+				SetBoolValue(attributes, "Reverse", m_pan->reverse);
+				SetDoubleValue(attributes, "RangeOfMotion", m_pan->range_of_motion);
+			}
+			if (currentElementName == "TiltMotor")
+			{
+				auto const& attributes = xmlReader.attributes();
+				SetIntValue(attributes, "ChannelCoarse", m_tilt->channel_coarse);
+				SetIntValue(attributes, "ChannelFine", m_tilt->channel_fine);
+				SetIntValue(attributes, "MinLimit", m_tilt->min_limit);
+				SetIntValue(attributes, "OrientZero", m_tilt->orient_zero);
+				SetIntValue(attributes, "OrientHome", m_tilt->orient_home);
+				SetBoolValue(attributes, "Reverse", m_tilt->reverse);
+				SetDoubleValue(attributes, "RangeOfMotion", m_tilt->range_of_motion);
 			}
 			xmlReader.readNext();
 		}

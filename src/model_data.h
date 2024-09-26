@@ -1,5 +1,7 @@
 #pragma once
 
+#include "dmx_color.h"
+
 #include <QObject>
 #include <QString>
 #include <QSettings>
@@ -14,7 +16,7 @@ const int max_value{ 65535 };
 struct PTDataPoint {
 	PTDataPoint()
 	{}
-	PTDataPoint(double t, double p, int ms) :
+	PTDataPoint(int ms, double p ,double t) :
 		tilt(t),
 		pan(p),
 		time_ms(ms)
@@ -40,6 +42,17 @@ struct WheelDataPoint {
 	int time_ms{ 0 };
 };
 
+struct ColorDataPoint {
+	ColorDataPoint()
+	{}
+	ColorDataPoint(int ms, QColor const& co) :
+		color(co),
+		time_ms(ms)
+	{}
+	QColor color;
+	int time_ms{ 0 };
+};
+
 struct MotorData {
 	int channel_coarse{ 0 };
 	int channel_fine{ 0 };
@@ -58,7 +71,7 @@ struct ModelData : public QObject
 public:
 	ModelData(QSettings * sett);
 	void ReadSettings(QSettings* sett);
-	void SaveSettings(QSettings* sett);
+	void SaveSettings(QSettings* sett) const;
 	//~ModelData();
 	std::tuple<QString, QString> CreatePanTiltVCDate() const;
 	//QString CreatePanVCDate() const;
@@ -81,14 +94,16 @@ private:
 	void CalcPanTiltDMX(PTDataPoint & point);
 	void SaveFile(QString const& type, QString const& data, QString const& xmlFileName) const;
 	void WriteCmdToPixel(int value, MotorData* motor);
-	std::vector<WheelDataPoint> m_wheel_values;
-	std::vector<RGBDataPoint> m_rgb_values;
+	//std::vector<WheelDataPoint> m_wheel_values;
+	//std::vector<RGBDataPoint> m_rgb_values;
+
+	std::vector <ColorDataPoint> m_color_values;
 	std::vector<PTDataPoint> m_pt_values;
 	QColor m_last_color{ Qt::black };
 
 	std::unique_ptr < MotorData> m_pan{nullptr};
 	std::unique_ptr < MotorData> m_tilt{ nullptr };
-
+	std::unique_ptr < DmxColor> m_color{ nullptr };
 	uint8_t m_data[20];
 };
 
