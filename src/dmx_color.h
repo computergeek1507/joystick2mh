@@ -7,7 +7,7 @@
 
 #include <memory>
 #include <vector>
-
+#include <optional>
 
 struct DmxColor {
 	DmxColor()
@@ -116,8 +116,8 @@ struct DmxColorWheel : public DmxColor
                 m_data[wheel_channel - 1] = colordata.value();
             }
             if (CheckChannel(dimmer_channel)) {
-                int hsv = color.toHsv().lightness();
-                int intensity = (hsv * 255.0);
+                int intensity = color.toHsv().value();
+                //int intensity = (hsv * 255.0);
                 m_data[dimmer_channel - 1] = intensity;
             }
         }

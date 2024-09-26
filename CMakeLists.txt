@@ -31,7 +31,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Xml Gamepad PrintSupport joystick2vc)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network Xml Gamepad PrintSupport SerialPort)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network Xml Gamepad PrintSupport SerialPort)
 
 configure_file(src/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
