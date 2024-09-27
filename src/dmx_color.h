@@ -9,13 +9,16 @@
 #include <vector>
 #include <optional>
 
-struct DmxColor {
+struct DmxColor : public QObject
+{
+    Q_OBJECT
+public:
 	DmxColor()
 	{}
 
     virtual ~DmxColor() = default;
 	
-	virtual void SetColorPixels(const QColor& color, uint8_t* m_data) const = 0;
+	virtual void SetColorPixels(const QColor& color) = 0;
 
     virtual void ReadSettings(QSettings* sett) = 0;
     virtual void SaveSettings(QSettings* sett) const = 0;
@@ -24,6 +27,9 @@ struct DmxColor {
     {
         return chan > 0 && 20 > chan;
     };
+
+Q_SIGNALS:
+    void SetChannelData(uint16_t chan, uint8_t value);
 };
 
 struct DmxColorRGB : public DmxColor
@@ -38,21 +44,25 @@ struct DmxColorRGB : public DmxColor
     uint32_t blue_channel{ 0 };
     uint32_t white_channel{ 0 };
 
-    void SetColorPixels(const QColor& color, uint8_t* m_data) const override
+    void SetColorPixels(const QColor& color) override
     {
         if (CheckChannel(white_channel)
             && color.red() == color.green() && color.red() == color.blue()) {
-            m_data[white_channel - 1] = color.red();
+           // m_data[white_channel - 1] = color.red();
+            emit SetChannelData(white_channel, color.red());
         }
         else {
             if (CheckChannel(red_channel ) ){
-                m_data[red_channel - 1] = color.red();
+                //m_data[red_channel - 1] = color.red();
+                emit SetChannelData(red_channel, color.red());
             }
             if (CheckChannel(green_channel)) {
-                m_data[green_channel - 1] = color.green();
+                //m_data[green_channel - 1] = color.green();
+                emit SetChannelData(green_channel, color.green());
             }
             if (CheckChannel(blue_channel)) {
-                m_data[blue_channel - 1] = color.blue();
+                //m_data[blue_channel - 1] = color.blue();
+                emit SetChannelData(blue_channel, color.blue());
             }
         }
     }
@@ -109,24 +119,28 @@ struct DmxColorWheel : public DmxColor
         return std::nullopt;
     }
 
-    void SetColorPixels(const QColor& color, uint8_t* m_data) const override
+    void SetColorPixels(const QColor& color) override
     {
         if (auto const& colordata = GetDMXWheelValue(color); colordata) {
             if (CheckChannel(wheel_channel)) {
-                m_data[wheel_channel - 1] = colordata.value();
+                //m_data[wheel_channel - 1] = colordata.value();
+                emit SetChannelData(wheel_channel, colordata.value());
             }
             if (CheckChannel(dimmer_channel)) {
                 int intensity = color.toHsv().value();
                 //int intensity = (hsv * 255.0);
-                m_data[dimmer_channel - 1] = intensity;
+                //m_data[dimmer_channel - 1] = intensity;
+                emit SetChannelData(dimmer_channel, intensity);
             }
         }
         else {
             if (CheckChannel(wheel_channel)) {
-                m_data[wheel_channel - 1] = 0;
+                //m_data[wheel_channel - 1] = 0;
+                emit SetChannelData(wheel_channel, 0);
             }
             if (CheckChannel(dimmer_channel)) {
-                m_data[dimmer_channel - 1] = 0;
+                //m_data[dimmer_channel - 1] = 0;
+                emit SetChannelData(dimmer_channel, 0);
             }
         }
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dmx_color.h"
+#include "outputs/OutputManager.h"
 
 #include <QObject>
 #include <QString>
@@ -9,6 +10,7 @@
 
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 const int min_value{ 0 };
 const int max_value{ 65535 };
@@ -33,6 +35,15 @@ struct RGBDataPoint {
 	double g{ 0.0 };
 	double b{ 0.0 };
 	double w{ 0.0 };
+	int time_ms{ 0 };
+};
+
+struct GenericDMXPoint {
+	GenericDMXPoint(int ms, uint8_t dmx_) :
+		dmx(dmx_),
+		time_ms(ms)
+	{}
+	uint8_t dmx{ 0 };
 	int time_ms{ 0 };
 };
 
@@ -69,7 +80,7 @@ struct ModelData : public QObject
 {
 	Q_OBJECT
 public:
-	ModelData(QSettings * sett);
+	ModelData(QSettings * sett, OutputManager* out);
 	void ReadSettings(QSettings* sett);
 	void SaveSettings(QSettings* sett) const;
 	//~ModelData();
@@ -101,9 +112,13 @@ private:
 	std::vector<PTDataPoint> m_pt_values;
 	QColor m_last_color{ Qt::black };
 
+	std::unordered_map<QString,std::vector<GenericDMXPoint>> m_dmx_values;
+
 	std::unique_ptr < MotorData> m_pan{nullptr};
 	std::unique_ptr < MotorData> m_tilt{ nullptr };
 	std::unique_ptr < DmxColor> m_color{ nullptr };
 	uint8_t m_data[20];
+
+	OutputManager* m_out;
 };
 

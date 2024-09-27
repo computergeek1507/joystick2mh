@@ -7,12 +7,18 @@
 #include <QDomDocument>
 #include <QXmlStreamReader>
 
-ModelData::ModelData(QSettings* sett) 
+ModelData::ModelData(QSettings* sett, OutputManager* out):
+	m_out(out)
 {
 	memset(m_data, 0x00, sizeof(m_data));
 	m_pan = std::make_unique< MotorData>();
 	m_tilt = std::make_unique< MotorData>();
 	ReadSettings(sett);
+
+	connect(this, &ModelData::SetChannelData, out, &OutputManager::SetData);
+	if (m_color) {
+		connect(m_color.get(), &DmxColor::SetChannelData, out, &OutputManager::SetData, Qt::UniqueConnection);
+	}
 }
 
 void ModelData::ReadSettings(QSettings* sett)
@@ -107,7 +113,7 @@ void ModelData::AddColor(int time_ms)
 	//CalcPanTiltDMX(pt);
 	m_color_values.emplace_back(time_ms, m_last_color);
 	if (m_color) {
-		//m_color->SetColorPixels(m_last_color)
+		m_color->SetColorPixels(m_last_color);
 	}
 }
 

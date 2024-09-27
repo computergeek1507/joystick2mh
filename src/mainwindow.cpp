@@ -63,12 +63,12 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m_settings = std::make_unique< QSettings>(m_appdir + "/settings.txt", QSettings::IniFormat);
 
-	m_model = std::make_unique< ModelData>(m_settings.get());
-
 	m_output = std::make_unique< OutputManager>();
-	m_output->ReadSettings(m_settings.get());
-	connect(m_model.get(), &ModelData::SetChannelData, m_output.get(), &OutputManager::SetData);
+	m_model = std::make_unique< ModelData>(m_settings.get(), m_output.get());
 
+	m_output->ReadSettings(m_settings.get());
+	//connect(m_model.get(), &ModelData::SetChannelData, m_output.get(), &OutputManager::SetData);
+	//connect(m_model.get(), &ModelData::SetChannelData, m_output.get(), &OutputManager::SetData);
 
 	m_controllerReader = new QTimer (this);
 	connect(m_controllerReader, &QTimer::timeout, this, &MainWindow::ReadJoystick);
