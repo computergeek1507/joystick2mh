@@ -37,6 +37,7 @@ struct DDPOutput : IPOutput
 	bool Open() override;
 	void Close() override;
 	void OutputFrame(uint8_t *data) override;
+	QString GetName() const override { return "DDP"; };
 	uint16_t PacketSize{1440};
 	bool KeepChannels{true};
 };

@@ -4,21 +4,14 @@
 
 #include "config.h"
 
-
-//#include <QMessageBox>
-//#include <QDesktopServices>
-//#include <QFileDialog>
-//#include <QTextStream>
-//#include <QTableWidget>
 #include <QThread>
-//#include <QInputDialog>
 #include <QTimer>
-//
+#include <QLabel>
+
 //#include <QNetworkAccessManager>
 //#include <QNetworkReply>
 #include <QStandardPaths>
 //#include <QOperatingSystemVersion>
-
 
 #include "spdlog/spdlog.h"
 
@@ -70,6 +63,13 @@ MainWindow::MainWindow(QWidget *parent)
 	//connect(m_model.get(), &ModelData::SetChannelData, m_output.get(), &OutputManager::SetData);
 	//connect(m_model.get(), &ModelData::SetChannelData, m_output.get(), &OutputManager::SetData);
 
+	onUpdateSettingsGUI();
+
+	connect(m_model.get(), &ModelData::OnSetColor, this, &MainWindow::onUpdateColor);
+
+	m_colorLabel = new QLabel(this);
+	m_ui->statusbar->addPermanentWidget(m_colorLabel);
+
 	m_controllerReader = new QTimer (this);
 	connect(m_controllerReader, &QTimer::timeout, this, &MainWindow::ReadJoystick);
 
@@ -110,29 +110,40 @@ void MainWindow::LoadControllers()
 	{
 		m_gamepad = std::make_unique < QGamepad>(*gamepads.begin(), this);
 		connect(m_gamepad.get(), &QGamepad::buttonAChanged, this, [&](bool pressed) {
-			on_pushButtonStart_clicked();
+			if(pressed) m_model->ChangeColor(Qt::green);
 			});
 		connect(m_gamepad.get(), &QGamepad::buttonBChanged, this, [&](bool pressed) {
-			on_pushButtonStop_clicked();
+			if (pressed) m_model->ChangeColor(Qt::red);
 			});
 		connect(m_gamepad.get(), &QGamepad::buttonXChanged, this, [&](bool pressed) {
-			on_pushButtonReset_clicked();
+			if (pressed) m_model->ChangeColor(Qt::blue);
+			});
+		connect(m_gamepad.get(), &QGamepad::buttonYChanged, this, [&](bool pressed) {
+			if (pressed) m_model->ChangeColor(Qt::yellow);
 			});
 
-		connect(m_gamepad.get(), &QGamepad::buttonDownChanged, this, [&](bool pressed) {
-			m_model->ChangeColor(Qt::white);
+		connect(m_gamepad.get(), &QGamepad::buttonStartChanged, this, [&](bool pressed) {
+			if (pressed) { 
+				m_recording ? on_pushButtonStart_clicked() : on_pushButtonStop_clicked(); }
 			});
-		connect(m_gamepad.get(), &QGamepad::buttonUpChanged, this, [&](bool pressed) {
-			m_model->ChangeColor(Qt::green);
+
+		connect(m_gamepad.get(), &QGamepad::buttonSelectChanged, this, [&](bool pressed) {
+			if (pressed) on_pushButtonReset_clicked();
 			});
-		connect(m_gamepad.get(), &QGamepad::buttonLeftChanged, this, [&](bool pressed) {
-			m_model->ChangeColor(Qt::red);
-			});
-		connect(m_gamepad.get(), &QGamepad::buttonRightChanged, this, [&](bool pressed) {
-			m_model->ChangeColor(Qt::blue);
-			});
+
 		connect(m_gamepad.get(), &QGamepad::buttonR1Changed, this, [&](bool pressed) {
-			m_model->ChangeColor(Qt::black);
+			if (pressed) m_model->ChangeColor(Qt::black);
+			});
+		connect(m_gamepad.get(), &QGamepad::buttonR2Changed, this, [&](bool pressed) {
+			if (pressed) m_model->ChangeColor(Qt::white);
+			});
+
+		connect(m_gamepad.get(), &QGamepad::connectedChanged, this, [&](bool connected) {
+			if (!connected) 
+			{ 
+				on_pushButtonStop_clicked(); 
+				LogMessage("Controller Disconnected", spdlog::level::warn);
+			}
 			});
 	}
 	else 
@@ -152,6 +163,7 @@ void MainWindow::on_actionImport_Model_triggered()
 		return;
 	}
 	m_model->OpenModelFile(path);
+	RedrawModelSettings();
 }
 
 void MainWindow::on_actionSave_X_triggered()
@@ -178,11 +190,11 @@ void MainWindow::on_actionClose_triggered()
 
 void MainWindow::on_actionAbout_triggered()
 {
-	QString text = QString("Joystick 2 ValueCurve v%1<br>QT v%2<br><br>Icons by:")
+	QString text = QString("Joystick 2 MovingHead v%1<br>QT v%2<br><br>Icons by:")
 		.arg(PROJECT_VER, QT_VERSION_STR) +
 		QStringLiteral("<br><a href='http://www.famfamfam.com/lab/icons/silk/'>www.famfamfam.com</a>");
 		//http://www.famfamfam.com/lab/icons/silk/
-	QMessageBox::about( this, "About Joystick 2 ValueCurve", text );
+	QMessageBox::about( this, "About Joystick 2 MovingHead", text );
 }
 
 void MainWindow::on_actionOpen_Logs_triggered()
@@ -192,6 +204,7 @@ void MainWindow::on_actionOpen_Logs_triggered()
 
 void MainWindow::on_pushButtonStart_clicked() 
 {
+	m_recording = true;
 	m_ui->pushButtonStop->setEnabled(true);
 	m_ui->pushButtonStart->setEnabled(false);
 	m_controllerReader->start(m_ui->spinBoxDelay->value());
@@ -199,6 +212,7 @@ void MainWindow::on_pushButtonStart_clicked()
 
 void MainWindow::on_pushButtonStop_clicked() 
 {
+	m_recording = false;
 	m_controllerReader->stop();
 	m_ui->pushButtonStop->setEnabled(false);
 	m_ui->pushButtonStart->setEnabled(true);
@@ -291,6 +305,93 @@ void MainWindow::DrawPlot()
 	m_ui->valuesPlot->replot();
 }
 
+void MainWindow::onUpdateColor(QColor const& color)
+{
+	QPixmap pix(32, 32);
+	pix.fill(color);
+	m_colorLabel->setPixmap(pix);
+
+	//QString trc = QString("background-color: %1; border-radius: 10px;").arg(color.name());
+	//m_colorLabel->setStyleSheet(trc);
+}
+
+void MainWindow::onUpdateSettingsGUI()
+{
+	m_ui->pushButtonA->setStyleSheet(QString("background-color: %1").arg(QColor(Qt::green).name()));
+	m_ui->pushButtonB->setStyleSheet(QString("background-color: %1").arg(QColor(Qt::red).name()));
+	m_ui->pushButtonX->setStyleSheet(QString("background-color: %1").arg(QColor(Qt::blue).name()));
+	m_ui->pushButtonY->setStyleSheet(QString("background-color: %1").arg(QColor(Qt::yellow).name()));
+
+	if (m_output && m_output->GetOutput())
+	{
+		int idx = m_ui->comboBoxOutputType->findText(m_output->GetOutput()->GetName());
+		if (-1 != idx) 
+		{
+			m_ui->comboBoxOutputType->setCurrentIndex(idx);
+		}
+		m_ui->lineEditIPAddress->setText(m_output->GetOutput()->IP);
+		//m_ui->spinBoxStartUniverse->setValue(m_output->GetOutput()->Sta);
+		m_ui->spinBoxStartChannel->setValue(m_output->GetOutput()->StartChannel);
+		m_ui->spinBoxSize->setValue(m_output->GetOutput()->Channels);
+	}
+	m_ui->comboBoxColorMode->setCurrentIndex(0);
+
+
+	RedrawModelSettings();
+}
+
+void MainWindow::RedrawModelSettings()
+{
+	if (m_model && m_model->GetPanMotor())
+	{
+		m_ui->spinBoxPanChannel->setValue(m_model->GetPanMotor()->channel_coarse);
+		m_ui->spinBoxPanFineChannel->setValue(m_model->GetPanMotor()->channel_fine);
+		m_ui->spinBoxPanMin->setValue(m_model->GetPanMotor()->min_limit);
+		m_ui->spinBoxPanMax->setValue(m_model->GetPanMotor()->max_limit);
+		m_ui->spinBoxPanRange->setValue(m_model->GetPanMotor()->range_of_motion);
+		m_ui->spinBoxPanZero->setValue(m_model->GetPanMotor()->orient_zero);
+		m_ui->spinBoxPanForward->setValue(m_model->GetPanMotor()->orient_home);
+		m_ui->checkBoxPanReverse->setChecked(m_model->GetPanMotor()->reverse);
+	}
+	if (m_model && m_model->GetTiltMotor())
+	{
+		m_ui->spinBoxTiltChannel->setValue(m_model->GetTiltMotor()->channel_coarse);
+		m_ui->spinBoxTiltFineChannel->setValue(m_model->GetTiltMotor()->channel_fine);
+		m_ui->spinBoxTiltMin->setValue(m_model->GetTiltMotor()->min_limit);
+		m_ui->spinBoxTiltMax->setValue(m_model->GetTiltMotor()->max_limit);
+		m_ui->spinBoxTiltRange->setValue(m_model->GetTiltMotor()->range_of_motion);
+		m_ui->spinBoxTiltZero->setValue(m_model->GetTiltMotor()->orient_zero);
+		m_ui->spinBoxTiltUp->setValue(m_model->GetTiltMotor()->orient_home);
+		m_ui->checkBoxTiltReverse->setChecked(m_model->GetTiltMotor()->reverse);
+	}
+
+	if (m_model && m_model->GetColor())
+	{
+		auto type = std::to_underlying(m_model->GetColor()->GetColorType());
+
+		switch (m_model->GetColor()->GetColorType())
+		{
+			case DmxColorType::RGB: 
+			{
+				m_ui->comboBoxColorMode->setCurrentIndex(0);
+				auto rgbc = dynamic_cast<DmxColorRGB*>(m_model->GetColor());
+				m_ui->spinBoxColorR->setValue(rgbc->red_channel);
+				m_ui->spinBoxColorG->setValue(rgbc->green_channel);
+				m_ui->spinBoxColorB->setValue(rgbc->blue_channel);
+				m_ui->spinBoxColorW->setValue(rgbc->white_channel);
+			}
+			break;
+			case DmxColorType::Wheel:
+			{
+				m_ui->comboBoxColorMode->setCurrentIndex(1);
+				auto wheelc = dynamic_cast<DmxColorWheel*>(m_model->GetColor());
+				m_ui->spinBoxWheelDimmer->setValue(wheelc->dimmer_channel);
+				m_ui->spinBoxWheelChannel->setValue(wheelc->wheel_channel);
+			}
+			break;
+		}
+	}
+}
 
 void MainWindow::OpenFile(QString const& path)
 {

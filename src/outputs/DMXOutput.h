@@ -13,7 +13,7 @@ struct DMXOutput : SerialOutput
 	bool Open() override;
 	void Close() override;
 	void OutputFrame(uint8_t* data) override;
-
+	QString GetName() const override { return "DMX"; };
 	int _datalen {0};
 	//std::vector<uint8_t> _data;
 	uint8_t _data[DMX_MAX_CHANNELS + 6];

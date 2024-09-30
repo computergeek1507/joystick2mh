@@ -46,13 +46,14 @@ void ModelData::ReadSettings(QSettings* sett)
 	sett->endGroup();
 
 	sett->beginGroup("color");
-	auto col_mode = sett->value("mode", 0).toInt();
+	DmxColorType col_mode = static_cast<DmxColorType>(sett->value("mode", 0).toInt());
+
 	switch (col_mode) {
-	case 0:
+	case DmxColorType::RGB:
 		m_color = std::make_unique<DmxColorRGB>();
 		m_color->ReadSettings(sett);
 		break;
-	case 1:
+	case DmxColorType::Wheel:
 		m_color = std::make_unique<DmxColorWheel>();
 		m_color->ReadSettings(sett);
 		break;
@@ -122,6 +123,8 @@ void ModelData::ChangeColor(QColor color) {
 	if (m_color) {
 		//m_color->SetColorPixels(m_last_color);
 	}
+
+	emit OnSetColor(m_last_color);
 }
 
 void ModelData::CalcPanTiltDMX(PTDataPoint& point)
@@ -164,6 +167,7 @@ void ModelData::WriteXMLFile(QString const& xmlFileName) const
 	auto vc_data = CreatePanTiltVCDate();
 	SaveFile("Pan", std::get<0>(vc_data), xmlFileName);
 	SaveFile("Tilt", std::get<1>(vc_data), xmlFileName);
+	SaveColorFile("Color", xmlFileName);
 }
 
 void ModelData::SaveFile(QString const& type, QString const& data, QString const& xmlFileName) const
@@ -187,6 +191,56 @@ void ModelData::SaveFile(QString const& type, QString const& data, QString const
 	QDomDocument document;
 	document.createProcessingInstruction("xml", "version=\"1.0\" encoding=\"utf-8\"");
 	QDomElement valuecurve = document.createElement("valuecurve");
+	valuecurve.setAttribute("data", data);
+	valuecurve.setAttribute("SourceVersion", "2024.15");
+	document.appendChild(valuecurve);
+	xmlContent << document.toString();
+	xmlFile.close();
+}
+
+QString ModelData::CreateColorVC() const
+{
+	int totalLength = 0;
+	for (auto const& point : m_color_values)
+	{
+		totalLength += point.time_ms;
+	}
+	int curLen{ 0 };
+	//data="Active=TRUE|Id=ID_BUTTON_Palette2|Values=x=0.000^c=green;x=0.500^c=white;x=1.000^c=red|"
+	QString vcColor = "Active=TRUE|Id=ID_BUTTON_Palette1|Values=";
+	for (auto const& point : m_color_values)
+	{
+		//totalLength += interval;
+		vcColor += QString("x=%1^c=%2;").arg(curLen / (double)totalLength, 0, 'f', 3).arg(point.AsQString());
+		curLen += point.time_ms;
+	}
+	vcColor = vcColor.left(vcColor.count() - 1);
+	vcColor += "|";
+	return vcColor;
+}
+
+void ModelData::SaveColorFile(QString const& type, QString const& xmlFileName) const
+{
+	QFileInfo fileName(xmlFileName);
+	QString const& data = CreateColorVC();
+	QDir dir = fileName.dir();
+	QString baseName = fileName.baseName();
+	QString baseNameModified = baseName + "_" + type + "." + fileName.completeSuffix();
+	QFileInfo fileModified(dir, baseNameModified);
+	QString filePathModified = fileModified.filePath();
+	QFile xmlFile(filePathModified);
+
+	if (!xmlFile.open(QFile::WriteOnly | QFile::Text))
+	{
+		xmlFile.close();
+		//LogMessage("Failed to Save File", spdlog::level::warn);
+		//QMessageBox::warning(this, "Failed to Save File: " + xmlFileName, "Failed to Save File\n" + xmlFileName);
+		return;
+	}
+	QTextStream xmlContent(&xmlFile);
+	QDomDocument document;
+	document.createProcessingInstruction("xml", "version=\"1.0\" encoding=\"utf-8\"");
+	QDomElement valuecurve = document.createElement("colorcurve");
 	valuecurve.setAttribute("data", data);
 	valuecurve.setAttribute("SourceVersion", "2024.15");
 	document.appendChild(valuecurve);
@@ -265,7 +319,7 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 		while (xmlReader.isStartElement())
 		{
 			currentElementName = xmlReader.name().toString();
-			if(currentElementName == "dmxmodel")
+			if(currentElementName == "dmxmodel" || currentElementName == "model")
 			{
 				auto const& attributes =  xmlReader.attributes();
 				if (attributes.hasAttribute("DisplayAs")) 
@@ -300,7 +354,7 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 								{
 									auto wheelColParm = QString("DmxColorWheelColor%1").arg(k);
 									auto wheelDMXParm = QString("DmxColorWheelDMX%1").arg(k);
-									if (!attributes.hasAttribute("DisplayAs") && !attributes.hasAttribute("DisplayAs"))
+									if (!attributes.hasAttribute(wheelColParm) && !attributes.hasAttribute(wheelDMXParm))
 									{
 										break;
 									}
@@ -382,63 +436,4 @@ void ModelData::WriteCmdToPixel(int value, MotorData* motor)
 	}
 }
 
-int MotorData::ConvertPostoCmd(float position) const
-{
-	/*
 
-	int channel_coarse{ 0 };
-	int channel_fine{ 0 };
-	int min_value{ 0 };
-	int max_value{ 65535 };
-	int min_limit{ -180 };
-	int max_limit{ 180 };
-	float range_of_motion{180.0f};
-	int orient_zero { 0 };
-	int orient_home{ 0 };
-	float slew_limit{ 0.0F };
-	bool reverse{false};
-	bool upside_down{false};
-	int rev{ 1 };
-	*/
-	int rev{ 1 };
-	if (reverse) {
-		rev = -1;
-	}
-	else {
-		rev = 1;
-	}
-	float limited_pos = position;
-	if (limited_pos > max_limit) {
-		limited_pos = max_limit;
-	}
-	else if (limited_pos < min_limit) {
-		limited_pos = min_limit;
-	}
-
-	//if (upside_down) {
-	//	limited_pos = -1.0f * limited_pos;
-	//}
-
-	float goto_home = (float)max_value * (float)orient_home / range_of_motion;
-	float amount_to_move = (float)max_value * limited_pos / range_of_motion * rev;
-	float cmd = goto_home + amount_to_move;
-	float full_spin = (float)max_value * 360.0 / range_of_motion;
-
-	if (cmd < 0) {
-		if (cmd + full_spin < max_value) {
-			cmd += full_spin;
-		}
-		else {
-			cmd = 0; // tbd....figure out which limit is closer to desired target
-		}
-	}
-	else if (cmd > max_value) {
-		if (cmd - full_spin >= 0.0f) {
-			cmd -= full_spin;
-		}
-		else {
-			cmd = max_value; // tbd....figure out which limit is closer to desired target
-		}
-	}
-	return cmd;
-}

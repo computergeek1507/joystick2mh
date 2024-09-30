@@ -22,9 +22,8 @@ class QListWidget;
 class QTableWidget;
 class QGamepad;
 class QTimer;
+class QLabel;
 QT_END_NAMESPACE
-
-
 
 class MainWindow : public QMainWindow
 {
@@ -50,6 +49,9 @@ public Q_SLOTS:
 	void LoadControllers();
 	void ReadJoystick();
 	void DrawPlot();
+	void onUpdateColor(QColor const& color);
+	void onUpdateSettingsGUI();
+	void RedrawModelSettings();
 
 	void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
 
@@ -60,9 +62,11 @@ private:
 	std::unique_ptr<ModelData> m_model{ nullptr };
 	std::unique_ptr < OutputManager> m_output{ nullptr };
 	QString m_appdir;
+	bool m_recording{false};
 
 	std::unique_ptr <QGamepad> m_gamepad{ nullptr };
 	QTimer* m_controllerReader{ nullptr };
+	QLabel* m_colorLabel{ nullptr };
 
 	void OpenFile(QString const& path);
 

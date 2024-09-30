@@ -16,6 +16,8 @@ struct ArtNetOutput : IPOutput
 	void Close() override;
 	void OutputFrame(uint8_t *data) override;
 
+	QString GetName() const override { return "ArtNet"; };
+
 	uint32_t Universe{1};
 	uint16_t PacketSize{510};
 

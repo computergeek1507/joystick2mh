@@ -128,7 +128,6 @@ bool OutputManager::LoadOutput(QString const& type, QString const& ipAddress, ui
 		ddp->StartChannel = start_channel;
 		ddp->Channels = universe_size;
 		m_output = (std::move(ddp));
-		//emit AddController(active, nType, ipAddress, sChannels);
 	}
 	else if ("E131" == type)
 	{
@@ -139,7 +138,6 @@ bool OutputManager::LoadOutput(QString const& type, QString const& ipAddress, ui
 		e131->StartChannel = start_channel;
 		e131->Channels = universe_size;//todo fix
 		m_output = (std::move(e131));
-		//emit AddController(active, nType, ipAddress, sChannels);
 	}
 	else if ("ArtNet" == type)
 	{
@@ -150,36 +148,29 @@ bool OutputManager::LoadOutput(QString const& type, QString const& ipAddress, ui
 		artnet->StartChannel = start_channel;
 		artnet->Channels = universe_size;//todo fix
 		m_output = (std::move(artnet));
-		//emit AddController(active, nType, ipAddress, sChannels);
 	}
 	else if ("DMX" == type)
 	{
 		auto dmx = std::make_unique<DMXOutput>();
 		dmx->IP = ipAddress;
-		dmx->BaudRate = start_universe;
+		dmx->BaudRate = 250000;
 		dmx->StartChannel = start_channel;
 		dmx->Channels = universe_size;//todo fix
 		m_output = (std::move(dmx));
-		//emit AddController(active, nType, ipAddress, sChannels);
 	}
 	else if ("OpenDMX" == type)
 	{
 		auto opendmx = std::make_unique<OpenDMXOutput>();
 		opendmx->IP = ipAddress;
-		opendmx->BaudRate = start_universe;
+		opendmx->BaudRate = 250000;
 		opendmx->StartChannel = start_channel;
 		opendmx->Channels = universe_size;//todo fix
 		m_output = (std::move(opendmx));
-		//emit AddController(active, nType, ipAddress, sChannels);
 	}
-			
 	else
 	{
-		m_logger->warn("Unsupported output type: {}",type.toStdString());
+		m_logger->warn("Unsupported output type: {}" ,type.toStdString());
 		//unsupported type
 	}
-
-
-	//emit SetChannelCount(startChannel - 1);
 	return true;
 }

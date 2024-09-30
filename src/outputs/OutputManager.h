@@ -31,6 +31,8 @@ public:
     void CloseOutputs();
     void OutputData(uint8_t* data);
 
+    BaseOutput* const GetOutput() const { return m_output.get(); }
+
 public Q_SLOTS:
     void TriggerTimedOutputData();
     void StopDataOut();

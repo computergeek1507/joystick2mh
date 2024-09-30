@@ -16,6 +16,7 @@ struct E131Output : IPOutput
 	bool Open() override;
 	void Close() override;
 	void OutputFrame(uint8_t *data) override;
+	QString GetName() const override { return "E131"; };
 
 	uint32_t Universe{1};
 	uint16_t PacketSize{510};
