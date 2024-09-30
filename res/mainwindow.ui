@@ -11,11 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Joystick 2 MovingHead</string>
+   <string>Joystick 2 MH</string>
   </property>
   <property name="windowIcon">
    <iconset resource="joystick2vc.qrc">
-    <normaloff>:/joystick2vc/joystick2vc.png</normaloff>:/joystick2vc/joystick2vc.png</iconset>
+    <normaloff>:/joystick2vc/xbox.png</normaloff>:/joystick2vc/xbox.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -781,7 +781,7 @@
   <action name="actionAbout">
    <property name="icon">
     <iconset resource="joystick2vc.qrc">
-     <normaloff>:/joystick2vc/joystick2vc.png</normaloff>:/joystick2vc/joystick2vc.png</iconset>
+     <normaloff>:/joystick2vc/xbox.png</normaloff>:/joystick2vc/xbox.png</iconset>
    </property>
    <property name="text">
     <string>About...</string>

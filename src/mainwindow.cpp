@@ -190,11 +190,11 @@ void MainWindow::on_actionClose_triggered()
 
 void MainWindow::on_actionAbout_triggered()
 {
-	QString text = QString("Joystick 2 MovingHead v%1<br>QT v%2<br><br>Icons by:")
+	QString text = QString("Joystick 2 MH v%1<br>QT v%2<br><br>Icons by:")
 		.arg(PROJECT_VER, QT_VERSION_STR) +
 		QStringLiteral("<br><a href='http://www.famfamfam.com/lab/icons/silk/'>www.famfamfam.com</a>");
 		//http://www.famfamfam.com/lab/icons/silk/
-	QMessageBox::about( this, "About Joystick 2 MovingHead", text );
+	QMessageBox::about( this, "About Joystick 2 MH", text );
 }
 
 void MainWindow::on_actionOpen_Logs_triggered()
