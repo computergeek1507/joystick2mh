@@ -162,11 +162,40 @@ std::tuple<QString,QString> ModelData::CreatePanTiltVCDate() const
 	return { vcPan, vcTilt };
 }
 
+std::tuple<QString, QString> ModelData::CreatePanTiltDMXVCDate() const
+{
+	int totalLength = 0;
+	for (auto const& point : m_pt_values)
+	{
+		totalLength += point.time_ms;
+	}
+	int curLen{ 0 };
+	//data="Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=0.00:0.30;0.85:0.38;1.00:0.44|"
+	QString vcPan = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
+	QString vcTilt = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
+	for (auto const& point : m_pt_values)
+	{
+		//totalLength += interval;
+		vcPan += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.pan_dmx / 255.0, 0, 'f', 2);
+
+		vcTilt += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.tilt_dmx / 255.0, 0, 'f', 2);
+		curLen += point.time_ms;
+	}
+	vcPan = vcPan.left(vcPan.count() - 1);
+	vcPan += "|";
+	vcTilt = vcTilt.left(vcTilt.count() - 1);
+	vcTilt += "|";
+	return { vcPan, vcTilt };
+}
+
 void ModelData::WriteXMLFile(QString const& xmlFileName) const
 {
 	auto vc_data = CreatePanTiltVCDate();
 	SaveFile("Pan", std::get<0>(vc_data), xmlFileName);
 	SaveFile("Tilt", std::get<1>(vc_data), xmlFileName);
+	auto vc_dmx_data = CreatePanTiltDMXVCDate();
+	SaveFile("Pan_DMX", std::get<0>(vc_dmx_data), xmlFileName);
+	SaveFile("Tilt_DMX", std::get<1>(vc_dmx_data), xmlFileName);
 	SaveColorFile("Color", xmlFileName);
 }
 

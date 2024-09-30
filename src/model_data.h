@@ -44,6 +44,7 @@ Q_SIGNALS:
 
 private:
 	std::tuple<QString, QString> CreatePanTiltVCDate() const;
+	std::tuple<QString, QString> CreatePanTiltDMXVCDate() const;
 	void CalcPanTiltDMX(PTDataPoint & point);
 	void SaveFile(QString const& type, QString const& data, QString const& xmlFileName) const;
 	QString CreateColorVC() const;
