@@ -1,13 +1,13 @@
-### joystick2vc
+### joystick2mh
 
-A tool to record joystick movements to xLights ValueCurves.
+A tool to Control Moving Heads with a Xbox Controller and export as xLights ValueCurves.
 
 ![Gif](/j2vc.gif)
 
 ### Building
 Uses C++23, QT 5.15, spdlog, and cMake 3.20.
 
-```git clone https://github.com/computergeek1507/joystick2vc.git```
+```git clone https://github.com/computergeek1507/joystick2mh.git```
 
 To build on Windows, use Visual Studio 2022
 
@@ -22,5 +22,5 @@ mkdir build
 cd build
 cmake ..
 cmake --build .
-./joystick2vc
+./joystick2mh
 ```
