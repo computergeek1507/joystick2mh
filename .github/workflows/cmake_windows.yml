@@ -38,7 +38,7 @@ jobs:
 
     - name: Build Installer
       working-directory: res\installer
-      run: ISCC.exe joystick2vc.iss
+      run: ISCC.exe joystick2mh.iss
 
     - name: Upload Installer
       uses: actions/upload-artifact@v4
