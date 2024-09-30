@@ -67,8 +67,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect(m_model.get(), &ModelData::OnSetColor, this, &MainWindow::onUpdateColor);
 
-	m_colorLabel = new QLabel(this);
-	m_ui->statusbar->addPermanentWidget(m_colorLabel);
+	//m_colorLabel = new QLabel(this);
+	//m_ui->statusbar->addWidget(m_colorLabel, 1);
 
 	m_controllerReader = new QTimer (this);
 	connect(m_controllerReader, &QTimer::timeout, this, &MainWindow::ReadJoystick);
@@ -124,7 +124,7 @@ void MainWindow::LoadControllers()
 
 		connect(m_gamepad.get(), &QGamepad::buttonStartChanged, this, [&](bool pressed) {
 			if (pressed) { 
-				m_recording ? on_pushButtonStart_clicked() : on_pushButtonStop_clicked(); }
+				!m_recording ? on_pushButtonStart_clicked() : on_pushButtonStop_clicked(); }
 			});
 
 		connect(m_gamepad.get(), &QGamepad::buttonSelectChanged, this, [&](bool pressed) {
@@ -257,7 +257,7 @@ void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum ll
 
 void MainWindow::DrawPlot()
 {
-	m_ui->valuesPlot->yAxis->setRange(-0.2, 1.2);
+	m_ui->valuesPlot->yAxis->setRange(-260.0, 260.0);
 	auto const& panTilt = m_model->GetPanTiltValues();
 	QSharedPointer<QCPAxisTickerFixed> fixedTicker(new QCPAxisTickerFixed);
 	m_ui->valuesPlot->xAxis->setTicker(fixedTicker);
@@ -278,12 +278,20 @@ void MainWindow::DrawPlot()
 			QVector<double> x1(size), y1(size);
 			QVector<double> x2(size), y2(size);
 
+			QVector<double> a1(size), b1(size);
+			QVector<double> a2(size), b2(size);
+
 			for (int i = 0; i < size; ++i)
 			{
 				x1[i] = offset + i + 1;
 				y1[i] = data[i].pan;
 				x2[i] = offset + i + 1;
 				y2[i] = data[i].tilt;
+
+				a1[i] = offset + i + 1;
+				b1[i] = data[i].pan_coarse_dmx;
+				a2[i] = offset + i + 1;
+				b2[i] = data[i].tilt_coarse_dmx;
 			}
 			auto ngr = m_ui->valuesPlot->addGraph();
 			ngr->setName("Pan");
@@ -298,6 +306,20 @@ void MainWindow::DrawPlot()
 			ngr2->setLineStyle(QCPGraph::lsLine);
 			ngr2->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 4));
 			ngr2->setData(x2, y2);
+
+			auto ngr3 = m_ui->valuesPlot->addGraph();
+			ngr3->setName("Pan DMX");
+			ngr3->setPen(QPen(Qt::green));
+			ngr3->setLineStyle(QCPGraph::lsLine);
+			ngr3->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 4));
+			ngr3->setData(a1, b1);
+
+			auto ngr4 = m_ui->valuesPlot->addGraph();
+			ngr4->setName("Tilt DMX");
+			ngr4->setPen(QPen(Qt::yellow));
+			ngr4->setLineStyle(QCPGraph::lsLine);
+			ngr4->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 4));
+			ngr4->setData(a2, b2);
 			offset += size;
 		};
 	AddTesterPointGraph(panTilt);
@@ -307,10 +329,10 @@ void MainWindow::DrawPlot()
 
 void MainWindow::onUpdateColor(QColor const& color)
 {
-	QPixmap pix(32, 32);
+	QPixmap pix(40, 20);
 	pix.fill(color);
-	m_colorLabel->setPixmap(pix);
-
+	//m_colorLabel->setPixmap(pix);
+	m_ui->labelColor->setPixmap(pix);
 	//QString trc = QString("background-color: %1; border-radius: 10px;").arg(color.name());
 	//m_colorLabel->setStyleSheet(trc);
 }

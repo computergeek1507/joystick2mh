@@ -19,7 +19,7 @@ struct ModelData : public QObject
 {
 	Q_OBJECT
 public:
-	ModelData(QSettings * sett, OutputManager* out);
+	ModelData(QSettings* sett, OutputManager* out);
 	void ReadSettings(QSettings* sett);
 	void SaveSettings(QSettings* sett) const;
 	//~ModelData();
@@ -43,8 +43,8 @@ Q_SIGNALS:
 	void OnSetColor(QColor const& color);
 
 private:
-	std::tuple<QString, QString> CreatePanTiltVCDate() const;
-	std::tuple<QString, QString> CreatePanTiltDMXVCDate() const;
+	DegreeStringData CreatePanTiltVCDate() const;
+	DMXStringData CreatePanTiltDMXVCDate() const;
 	void CalcPanTiltDMX(PTDataPoint & point);
 	void SaveFile(QString const& type, QString const& data, QString const& xmlFileName) const;
 	QString CreateColorVC() const;

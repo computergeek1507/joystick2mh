@@ -3,6 +3,33 @@
 #include <QColor>
 #include <QString>
 
+struct DMXStringData 
+{
+	DMXStringData() {};
+	DMXStringData(QString const& pc, QString const& pf,
+		QString const& tc, QString const& tf ) :
+		pan_coarse(pc),
+		pan_fine(pf),
+		tilt_coarse(tc),
+		tilt_fine(tf)
+	{};
+	QString tilt_coarse;
+	QString tilt_fine;
+	QString pan_coarse;
+	QString pan_fine;
+};
+
+struct DegreeStringData
+{
+	DegreeStringData() {};
+	DegreeStringData(QString const& p, QString const& t) :
+		pan(p),
+		tilt(t)
+	{};
+	QString pan;
+	QString tilt;
+};
+
 struct PTDataPoint {
 	PTDataPoint()
 	{}
@@ -13,8 +40,10 @@ struct PTDataPoint {
 	{}
 	double tilt{ 0.0 };
 	double pan{ 0.0 };
-	uint8_t tilt_dmx{ 0 };
-	uint8_t pan_dmx{ 0 };
+	uint8_t tilt_coarse_dmx{ 0 };
+	uint8_t pan_coarse_dmx{ 0 };
+	uint8_t tilt_fine_dmx{ 0 };
+	uint8_t pan_fine_dmx{ 0 };
 	int time_ms{ 0 };
 };
 

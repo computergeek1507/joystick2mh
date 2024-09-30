@@ -103,7 +103,18 @@ void ModelData::ClearData()
 //-1.0 to 1.0
 void ModelData::AddPanTilt(int time_ms, double pan, double tilt)
 {
-	auto& pt = m_pt_values.emplace_back(time_ms, pan, tilt);
+	double scale_pan = (pan * 180.0);
+	double scale_tilt = (tilt * 180.0);
+	//if (!m_pt_values.empty())
+	//{
+	//	auto const& last_v = m_pt_values.back();
+	//	if (last_v.pan == scale_pan &&
+	//		last_v.tilt == scale_tilt)
+	//	{
+	//		return;
+	//	}
+	//}
+	auto& pt = m_pt_values.emplace_back(time_ms, scale_pan, scale_tilt);
 	CalcPanTiltDMX(pt);
 }
 
@@ -112,10 +123,18 @@ void ModelData::AddColor(int time_ms)
 	//auto& pt = m_pt_values.emplace_back(time_ms, pan, tilt);
 	//auto& pt = m_pt_values.emplace_back(time_ms, pan, tilt);
 	//CalcPanTiltDMX(pt);
-	m_color_values.emplace_back(time_ms, m_last_color);
 	if (m_color) {
 		m_color->SetColorPixels(m_last_color);
 	}
+	if (!m_color_values.empty()) 
+	{
+		auto const& col = m_color_values.back().color;
+		if (col == m_last_color)
+		{
+			return;
+		}
+	}
+	m_color_values.emplace_back(time_ms, m_last_color);
 }
 
 void ModelData::ChangeColor(QColor color) {
@@ -129,14 +148,23 @@ void ModelData::ChangeColor(QColor color) {
 
 void ModelData::CalcPanTiltDMX(PTDataPoint& point)
 {
-	point.tilt_dmx = m_tilt->ConvertPostoCmd(point.tilt * 180.0);
+	int tilt_value_dmx = m_tilt->ConvertPostoCmd(point.tilt);
 
-	point.pan_dmx = m_pan->ConvertPostoCmd(point.pan * 180.0);
-	WriteCmdToPixel(point.tilt_dmx, m_tilt.get());
-	WriteCmdToPixel(point.pan_dmx, m_pan.get());
+	uint8_t tlsb = tilt_value_dmx & 0xFF;
+	uint8_t tmsb = tilt_value_dmx >> 8;
+
+	point.tilt_coarse_dmx = tmsb;
+	point.tilt_fine_dmx = tlsb;
+	int pan_value_dmx = m_pan->ConvertPostoCmd(point.pan);
+
+	uint8_t plsb = pan_value_dmx & 0xFF;
+	uint8_t pmsb = pan_value_dmx >> 8;
+
+	point.pan_coarse_dmx = pmsb;
+	point.pan_fine_dmx = plsb;
 }
 
-std::tuple<QString,QString> ModelData::CreatePanTiltVCDate() const
+DegreeStringData ModelData::CreatePanTiltVCDate() const
 {
 	int totalLength = 0;
 	for (auto const& point : m_pt_values)
@@ -144,15 +172,26 @@ std::tuple<QString,QString> ModelData::CreatePanTiltVCDate() const
 		totalLength += point.time_ms;
 	}
 	int curLen { 0 };
+
+	double prev_pan{ -1.1 };
+	double prev_tilt{ -1.1 };
 	//data="Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=0.00:0.30;0.85:0.38;1.00:0.44|"
 	QString vcPan = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
 	QString vcTilt = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
 	for (auto const& point : m_pt_values)
 	{
-		//totalLength += interval;
-		vcPan += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.pan, 0, 'f', 2);
-
-		vcTilt += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.tilt, 0, 'f', 2);
+		double const sc_pan = (point.pan + 180.0) / 360.0;//0-1 value
+		double const sc_tilt = (point.tilt + 180.0) / 360.0;//0-1 value
+		if (abs(prev_pan - sc_pan) > 0.001)
+		{
+			vcPan += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(sc_pan, 0, 'f', 2);
+			prev_pan = sc_pan;
+		}
+		if (abs(prev_tilt - sc_tilt) > 0.001)
+		{
+			vcTilt += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(sc_tilt, 0, 'f', 2);
+			prev_tilt = sc_tilt;
+		}
 		curLen += point.time_ms;
 	}
 	vcPan = vcPan.left(vcPan.count() - 1);
@@ -162,7 +201,7 @@ std::tuple<QString,QString> ModelData::CreatePanTiltVCDate() const
 	return { vcPan, vcTilt };
 }
 
-std::tuple<QString, QString> ModelData::CreatePanTiltDMXVCDate() const
+DMXStringData ModelData::CreatePanTiltDMXVCDate() const
 {
 	int totalLength = 0;
 	for (auto const& point : m_pt_values)
@@ -170,32 +209,63 @@ std::tuple<QString, QString> ModelData::CreatePanTiltDMXVCDate() const
 		totalLength += point.time_ms;
 	}
 	int curLen{ 0 };
+	uint8_t prev_pan_course{ 255U };
+	uint8_t prev_pan_fine{ 255U };
+	uint8_t prev_tilt_course{ 255U };
+	uint8_t prev_tilt_fine{ 255U };
 	//data="Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=0.00:0.30;0.85:0.38;1.00:0.44|"
-	QString vcPan = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
-	QString vcTilt = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
+	QString vcPan_c = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
+	QString vcPan_f = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
+	QString vcTilt_c = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
+	QString vcTilt_f = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
 	for (auto const& point : m_pt_values)
 	{
-		//totalLength += interval;
-		vcPan += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.pan_dmx / 255.0, 0, 'f', 2);
+		if (abs(prev_pan_course - point.pan_coarse_dmx) > 1)
+		{
+			vcPan_c += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.pan_coarse_dmx / 255.0, 0, 'f', 2);
+			prev_pan_course = point.pan_coarse_dmx;
+		}
 
-		vcTilt += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.tilt_dmx / 255.0, 0, 'f', 2);
+		if (abs(prev_pan_fine - point.pan_fine_dmx) > 1)
+		{
+			vcPan_f += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.pan_fine_dmx / 255.0, 0, 'f', 2);
+			prev_pan_fine = point.pan_fine_dmx;
+		}
+
+		if (abs(prev_tilt_course - point.tilt_coarse_dmx) > 1)
+		{
+			vcTilt_c += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.tilt_coarse_dmx / 255.0, 0, 'f', 2);
+			prev_tilt_course = point.tilt_coarse_dmx;
+		}
+		
+		if (abs(prev_tilt_fine - point.tilt_fine_dmx) > 1)
+		{
+			vcTilt_f += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.tilt_fine_dmx / 255.0, 0, 'f', 2);
+			prev_tilt_fine = point.tilt_fine_dmx;
+		}
 		curLen += point.time_ms;
 	}
-	vcPan = vcPan.left(vcPan.count() - 1);
-	vcPan += "|";
-	vcTilt = vcTilt.left(vcTilt.count() - 1);
-	vcTilt += "|";
-	return { vcPan, vcTilt };
+	vcPan_c = vcPan_c.left(vcPan_c.count() - 1);
+	vcPan_c += "|";
+	vcTilt_c = vcTilt_c.left(vcTilt_c.count() - 1);
+	vcTilt_c += "|";
+	vcPan_f = vcPan_f.left(vcPan_f.count() - 1);
+	vcPan_f += "|";
+	vcTilt_f = vcTilt_f.left(vcTilt_f.count() - 1);
+	vcTilt_f += "|";
+	return DMXStringData(vcPan_c, vcPan_f, vcTilt_c, vcTilt_f );
 }
 
 void ModelData::WriteXMLFile(QString const& xmlFileName) const
 {
 	auto vc_data = CreatePanTiltVCDate();
-	SaveFile("Pan", std::get<0>(vc_data), xmlFileName);
-	SaveFile("Tilt", std::get<1>(vc_data), xmlFileName);
+	SaveFile("Pan", vc_data.pan, xmlFileName);
+	SaveFile("Tilt", vc_data.tilt, xmlFileName);
 	auto vc_dmx_data = CreatePanTiltDMXVCDate();
-	SaveFile("Pan_DMX", std::get<0>(vc_dmx_data), xmlFileName);
-	SaveFile("Tilt_DMX", std::get<1>(vc_dmx_data), xmlFileName);
+	SaveFile("Pan_Coarse_DMX", vc_dmx_data.pan_coarse, xmlFileName);
+	SaveFile("Pan_Fine_DMX", vc_dmx_data.pan_fine, xmlFileName);
+	SaveFile("Tilt_Coarse_DMX", vc_dmx_data.tilt_coarse, xmlFileName);
+	SaveFile("Tilt_Fine_DMX", vc_dmx_data.tilt_fine, xmlFileName);
 	SaveColorFile("Color", xmlFileName);
 }
 

@@ -66,7 +66,7 @@ private:
 
 	std::unique_ptr <QGamepad> m_gamepad{ nullptr };
 	QTimer* m_controllerReader{ nullptr };
-	QLabel* m_colorLabel{ nullptr };
+	//QLabel* m_colorLabel{ nullptr };
 
 	void OpenFile(QString const& path);
 
