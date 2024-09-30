@@ -1,7 +1,6 @@
 <RCC>
-  <qresource prefix="joystick2vc">
-    <file>xbox.png</file>
-    <file>joystick2vc.png</file>
+  <qresource prefix="joystick2mh">
+    <file>joystick2mh.png</file>
     <file>icons/book_open.png</file>
     <file>icons/accept.png</file>
     <file>icons/add.png</file>

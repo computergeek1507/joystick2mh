@@ -14,8 +14,8 @@
    <string>Joystick 2 MH</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="joystick2vc.qrc">
-    <normaloff>:/joystick2vc/xbox.png</normaloff>:/joystick2vc/xbox.png</iconset>
+   <iconset resource="joystick2mh.qrc">
+    <normaloff>:/joystick2mh/joystick2mh.png</normaloff>:/joystick2mh/joystick2mh.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -729,8 +729,8 @@
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionClose">
    <property name="icon">
-    <iconset resource="joystick2vc.qrc">
-     <normaloff>:/joystick2vc/icons/cancel.png</normaloff>:/joystick2vc/icons/cancel.png</iconset>
+    <iconset resource="joystick2mh.qrc">
+     <normaloff>:/joystick2mh/icons/cancel.png</normaloff>:/joystick2mh/icons/cancel.png</iconset>
    </property>
    <property name="text">
     <string>Close</string>
@@ -738,8 +738,8 @@
   </action>
   <action name="actionOpen_Logs">
    <property name="icon">
-    <iconset resource="joystick2vc.qrc">
-     <normaloff>:/joystick2vc/icons/script.png</normaloff>:/joystick2vc/icons/script.png</iconset>
+    <iconset resource="joystick2mh.qrc">
+     <normaloff>:/joystick2mh/icons/script.png</normaloff>:/joystick2mh/icons/script.png</iconset>
    </property>
    <property name="text">
     <string>Open Logs...</string>
@@ -780,8 +780,8 @@
   </action>
   <action name="actionAbout">
    <property name="icon">
-    <iconset resource="joystick2vc.qrc">
-     <normaloff>:/joystick2vc/xbox.png</normaloff>:/joystick2vc/xbox.png</iconset>
+    <iconset resource="joystick2mh.qrc">
+     <normaloff>:/joystick2mh/joystick2mh.png</normaloff>:/joystick2mh/joystick2mh.png</iconset>
    </property>
    <property name="text">
     <string>About...</string>
@@ -865,8 +865,8 @@
   </action>
   <action name="actionSave_X">
    <property name="icon">
-    <iconset resource="joystick2vc.qrc">
-     <normaloff>:/joystick2vc/icons/disk.png</normaloff>:/joystick2vc/icons/disk.png</iconset>
+    <iconset resource="joystick2mh.qrc">
+     <normaloff>:/joystick2mh/icons/disk.png</normaloff>:/joystick2mh/icons/disk.png</iconset>
    </property>
    <property name="text">
     <string>Save Value Curve...</string>
@@ -898,7 +898,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="joystick2vc.qrc"/>
+  <include location="joystick2mh.qrc"/>
  </resources>
  <connections/>
 </ui>
