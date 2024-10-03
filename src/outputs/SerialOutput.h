@@ -8,8 +8,12 @@
 
 struct SerialOutput : BaseOutput
 {
-	SerialOutput():m_SerialPort(std::make_unique<QSerialPort>()) {}
-	std::unique_ptr<QSerialPort> m_SerialPort;
+	SerialOutput()
+		//:		m_SerialPort(std::make_unique<QSerialPort>())
+	{
+		m_SerialPort = std::make_unique<QSerialPort>();
+	}
+	std::unique_ptr<QSerialPort> m_SerialPort{nullptr};
 
 	int BaudRate { 9600 };
 };

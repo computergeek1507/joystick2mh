@@ -149,14 +149,14 @@ void ModelData::ChangeColor(QColor color) {
 void ModelData::CalcPanTiltDMX(PTDataPoint& point)
 {
 	int tilt_value_dmx = m_tilt->ConvertPostoCmd(point.tilt);
-
+	WriteCmdToPixel(tilt_value_dmx, m_tilt.get());
 	uint8_t tlsb = tilt_value_dmx & 0xFF;
 	uint8_t tmsb = tilt_value_dmx >> 8;
 
 	point.tilt_coarse_dmx = tmsb;
 	point.tilt_fine_dmx = tlsb;
 	int pan_value_dmx = m_pan->ConvertPostoCmd(point.pan);
-
+	WriteCmdToPixel(pan_value_dmx, m_pan.get());
 	uint8_t plsb = pan_value_dmx & 0xFF;
 	uint8_t pmsb = pan_value_dmx >> 8;
 
@@ -400,6 +400,18 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 		}
 		};
 
+	auto SetUInt8Value = [](const QXmlStreamAttributes& attributes, QString const& parm, uint8_t& value) {
+		if (attributes.hasAttribute(parm))
+		{
+			bool ok{ false };
+			auto const val = attributes.value(parm).toUInt(&ok);
+			if (ok)
+			{
+				value = val;
+			}
+		}
+		};
+
 	auto SetDoubleValue = [](const QXmlStreamAttributes& attributes, QString const& parm, double& value) {
 		if (attributes.hasAttribute(parm))
 		{
@@ -433,7 +445,6 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 						//SetDoubleValue(attributes, "DmxPanDegOfRot", m_pan->range_of_motion);
 						if (attributes.hasAttribute("DmxColorType"))
 						{
-							
 							auto const val = attributes.value("DmxColorType");
 							if (val == "0")
 							{
@@ -464,6 +475,11 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 								}
 								//DmxColorWheelColor13="#c0c0c0" DmxColorWheelDMX13="104"
 								m_color = std::move(wheelcolor);
+							}
+							if (m_color) 
+							{
+								SetUIntValue(attributes, "DmxShutterChannel", m_color->shutter_channel);
+								SetUInt8Value(attributes, "DmxShutterOnValue", m_color->shutter_on_value);
 							}
 						}
 						//"DmxColorType"

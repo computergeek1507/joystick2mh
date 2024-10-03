@@ -1,6 +1,6 @@
 #include "DMXOutput.h"
 
-DMXOutput::DMXOutput()
+DMXOutput::DMXOutput():SerialOutput()
 {
     memset(_data, 0x00, sizeof(_data));
 }
@@ -29,7 +29,7 @@ void DMXOutput::Close()
 
 void DMXOutput::OutputFrame(uint8_t* data)
 {
-    if ( m_SerialPort == nullptr || m_SerialPort->isOpen()) return;
+    if ( m_SerialPort == nullptr || !m_SerialPort->isOpen()) return;
 
     size_t chs = std::min((size_t)Channels, (size_t)(DMX_MAX_CHANNELS));
 

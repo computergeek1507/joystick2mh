@@ -32,8 +32,25 @@ public:
         return chan > 0 && 20 > chan;
     };
 
+    uint32_t shutter_channel{ 0u };
+    uint8_t shutter_on_value{ 255u };
+
+
 Q_SIGNALS:
     void SetChannelData(uint16_t chan, uint8_t value);
+
+protected:
+    void SaveBaseSettings(QSettings* sett) const
+    {
+        sett->setValue("shutter_channel", shutter_channel);
+        sett->setValue("shutter_on_value", shutter_on_value);
+    }
+
+    void ReadBaseSettings(QSettings* sett)
+    {
+        shutter_channel = sett->value("shutter_channel", 0u).toUInt();
+        shutter_on_value = sett->value("shutter_on_value", 255u).toUInt();
+    }    
 };
 
 struct DmxColorRGB : public DmxColor
@@ -76,6 +93,11 @@ struct DmxColorRGB : public DmxColor
                 emit SetChannelData(blue_channel, color.blue());
             }
         }
+
+        if (CheckChannel(shutter_channel))
+        {
+            emit SetChannelData(shutter_channel, shutter_on_value);
+        }
     }
 
     void ReadSettings(QSettings* sett) override
@@ -84,6 +106,7 @@ struct DmxColorRGB : public DmxColor
         green_channel = sett->value("green_channel", 0u).toUInt();
         blue_channel = sett->value("blue_channel", 0u).toUInt();
         white_channel = sett->value("white_channel", 0u).toUInt();
+        ReadBaseSettings(sett);
     }
     void SaveSettings(QSettings* sett) const override 
     {
@@ -92,6 +115,7 @@ struct DmxColorRGB : public DmxColor
         sett->setValue("green_channel", green_channel);
         sett->setValue("blue_channel", blue_channel);
         sett->setValue("white_channel", white_channel);
+        SaveBaseSettings(sett);
     }
 };
 
@@ -162,6 +186,11 @@ struct DmxColorWheel : public DmxColor
                 emit SetChannelData(dimmer_channel, 0);
             }
         }
+
+        if (CheckChannel(shutter_channel))
+        {
+            emit SetChannelData(shutter_channel, shutter_on_value);
+        }
     }
 
     void ReadSettings(QSettings* sett) override
@@ -179,6 +208,7 @@ struct DmxColorWheel : public DmxColor
                 colors.emplace_back(QColor(datastr[0]), dmx);
             }
         }
+        ReadBaseSettings(sett);
     }
 
     void SaveSettings(QSettings* sett) const override 
@@ -192,5 +222,6 @@ struct DmxColorWheel : public DmxColor
             colorsStr.append(QString("%1:%2").arg(col.color.name()).arg(col.dmxValue));
         }
         sett->setValue("color_wheel", colorsStr);
+        SaveBaseSettings(sett);
     }
 };

@@ -74,7 +74,7 @@ bool OutputManager::OpenOutputs()
 	//for (auto const& o : m_outputs)
 	//{
 	if (m_output)
-		m_output->Open();
+		return m_output->Open();
 	//}
 	return true;
 }

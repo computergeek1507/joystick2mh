@@ -78,7 +78,10 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m_ui->valuesPlot->setInteraction(QCP::iRangeDrag, true);
 	m_ui->valuesPlot->setInteraction(QCP::iRangeZoom, true);
-
+	m_ui->splitter->setStretchFactor(0, 2);
+	m_ui->splitter->setStretchFactor(1, 1);
+	m_ui->tableWidgetChannels->sizePolicy().setHorizontalStretch(1);
+	m_ui->valuesPlot->sizePolicy().setHorizontalStretch(2);
 	QTimer::singleShot(500, this, SLOT(LoadControllers()));
 }
 
@@ -230,7 +233,7 @@ void MainWindow::on_checkBoxOutput_stateChanged(int state)
 	{
 		if (state)
 		{
-			m_output->OpenOutputs();
+			auto worked = m_output->OpenOutputs();
 			m_output->StartDataOut();
 		}
 		else 
@@ -244,7 +247,7 @@ void MainWindow::ReadJoystick()
 {
 	if (m_gamepad) 
 	{
-		m_model->AddPanTilt(m_ui->spinBoxDelay->value(), m_gamepad->axisLeftX(), -m_gamepad->axisLeftY() );
+		m_model->AddPanTilt(m_ui->spinBoxDelay->value(), -m_gamepad->axisLeftX(), -m_gamepad->axisLeftY() );
 		m_model->AddColor(m_ui->spinBoxDelay->value());
 	}
 	DrawPlot();
@@ -412,6 +415,9 @@ void MainWindow::RedrawModelSettings()
 			}
 			break;
 		}
+		m_ui->spinBoxShutter->setValue(m_model->GetColor()->shutter_channel);
+		m_ui->spinBoxShutterValue->setValue(m_model->GetColor()->shutter_on_value);
+
 	}
 }
 
