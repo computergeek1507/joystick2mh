@@ -37,11 +37,11 @@ public Q_SLOTS:
 
 	void on_actionImport_Model_triggered();
 	void on_actionSave_X_triggered();
-	void on_actionSave_Y_triggered();
 	void on_actionClose_triggered();
 
-	void on_actionAbout_triggered();
 	void on_actionOpen_Logs_triggered();
+	void on_actionOpen_Settings_triggered();
+	void on_actionAbout_triggered();
 	void on_pushButtonStart_clicked();
 	void on_pushButtonStop_clicked();
 	void on_pushButtonReset_clicked();
@@ -52,6 +52,8 @@ public Q_SLOTS:
 	void onUpdateColor(QColor const& color);
 	void onUpdateSettingsGUI();
 	void RedrawModelSettings();
+
+	void OnSetChannelData(uint16_t chan, uint8_t value);
 
 	void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
 

@@ -50,12 +50,20 @@ void ModelData::ReadSettings(QSettings* sett)
 
 	switch (col_mode) {
 	case DmxColorType::RGB:
+		if (m_color) {
+			disconnect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData);
+		}
 		m_color = std::make_unique<DmxColorRGB>();
 		m_color->ReadSettings(sett);
+		connect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData, Qt::UniqueConnection);
 		break;
 	case DmxColorType::Wheel:
+		if (m_color) {
+			disconnect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData);
+		}
 		m_color = std::make_unique<DmxColorWheel>();
 		m_color->ReadSettings(sett);
+		connect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData, Qt::UniqueConnection);
 		break;
 
 	}
@@ -101,10 +109,10 @@ void ModelData::ClearData()
 }
 
 //-1.0 to 1.0
-void ModelData::AddPanTilt(int time_ms, double pan, double tilt)
+void ModelData::AddPanTilt(int time_ms, double pan, double tilt, double pan_sen, double tilt_sen)
 {
-	double scale_pan = (pan * 180.0);
-	double scale_tilt = (tilt * 180.0);
+	double scale_pan = (pan * pan_sen);
+	double scale_tilt = (tilt * tilt_sen);
 	//if (!m_pt_values.empty())
 	//{
 	//	auto const& last_v = m_pt_values.back();
@@ -445,6 +453,9 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 						//SetDoubleValue(attributes, "DmxPanDegOfRot", m_pan->range_of_motion);
 						if (attributes.hasAttribute("DmxColorType"))
 						{
+							if (m_color) {
+								disconnect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData);
+							}
 							auto const val = attributes.value("DmxColorType");
 							if (val == "0")
 							{
@@ -454,6 +465,7 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 								SetUIntValue(attributes, "DmxBlueChannel", rgbcolor->blue_channel);
 								SetUIntValue(attributes, "DmxWhiteChannel", rgbcolor->white_channel);
 								m_color = std::move(rgbcolor);
+								connect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData, Qt::UniqueConnection);
 							}
 							else if (val == "1")
 							{
@@ -475,6 +487,7 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 								}
 								//DmxColorWheelColor13="#c0c0c0" DmxColorWheelDMX13="104"
 								m_color = std::move(wheelcolor);
+								connect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData, Qt::UniqueConnection);
 							}
 							if (m_color) 
 							{

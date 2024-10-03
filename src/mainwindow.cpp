@@ -63,6 +63,11 @@ MainWindow::MainWindow(QWidget *parent)
 	//connect(m_model.get(), &ModelData::SetChannelData, m_output.get(), &OutputManager::SetData);
 	//connect(m_model.get(), &ModelData::SetChannelData, m_output.get(), &OutputManager::SetData);
 
+	auto pan_sensitivity = m_settings->value("pan_sensitivity", 90).toInt();
+	auto tilt_sensitivity = m_settings->value("tilt_sensitivity", 90).toInt();
+	auto record_delay = m_settings->value("record_delay", 200).toInt();
+	m_ui->spinBoxDelay->setValue(record_delay);
+
 	onUpdateSettingsGUI();
 
 	connect(m_model.get(), &ModelData::OnSetColor, this, &MainWindow::onUpdateColor);
@@ -78,10 +83,10 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m_ui->valuesPlot->setInteraction(QCP::iRangeDrag, true);
 	m_ui->valuesPlot->setInteraction(QCP::iRangeZoom, true);
-	m_ui->splitter->setStretchFactor(0, 2);
+	m_ui->splitter->setStretchFactor(0, 3);
 	m_ui->splitter->setStretchFactor(1, 1);
-	m_ui->tableWidgetChannels->sizePolicy().setHorizontalStretch(1);
-	m_ui->valuesPlot->sizePolicy().setHorizontalStretch(2);
+	//m_ui->tableWidgetChannels->sizePolicy().setHorizontalStretch(1);
+	//m_ui->valuesPlot->sizePolicy().setHorizontalStretch(3);
 	QTimer::singleShot(500, this, SLOT(LoadControllers()));
 }
 
@@ -89,6 +94,10 @@ MainWindow::~MainWindow()
 {
 	m_model->SaveSettings(m_settings.get());
 	m_output->SaveSettings(m_settings.get());
+
+	m_settings->setValue("pan_sensitivity", m_ui->horizontalSliderPanSensitivity->value());
+	m_settings->setValue("tilt_sensitivity", m_ui->horizontalSliderTiltSensitivity->value());
+	m_settings->setValue("record_delay", m_ui->spinBoxDelay->value());
 	m_settings->sync();
 	delete m_ui;
 }
@@ -181,14 +190,20 @@ void MainWindow::on_actionSave_X_triggered()
 	m_model->WriteXMLFile(path);
 }
 
-void MainWindow::on_actionSave_Y_triggered() 
-{
-
-}
-
 void MainWindow::on_actionClose_triggered()
 {
 	close();
+}
+
+void MainWindow::on_actionOpen_Logs_triggered()
+{
+	QDesktopServices::openUrl(QUrl::fromLocalFile(m_appdir + "/log/"));
+}
+
+void MainWindow::on_actionOpen_Settings_triggered()
+{
+	OpenFile(m_appdir + "/settings.txt");
+
 }
 
 void MainWindow::on_actionAbout_triggered()
@@ -196,13 +211,8 @@ void MainWindow::on_actionAbout_triggered()
 	QString text = QString("Joystick 2 MH v%1<br>QT v%2<br><br>Icons by:")
 		.arg(PROJECT_VER, QT_VERSION_STR) +
 		QStringLiteral("<br><a href='http://www.famfamfam.com/lab/icons/silk/'>www.famfamfam.com</a>");
-		//http://www.famfamfam.com/lab/icons/silk/
-	QMessageBox::about( this, "About Joystick 2 MH", text );
-}
-
-void MainWindow::on_actionOpen_Logs_triggered()
-{
-	QDesktopServices::openUrl(QUrl::fromLocalFile(m_appdir + "/log/"));
+	//http://www.famfamfam.com/lab/icons/silk/
+	QMessageBox::about(this, "About Joystick 2 MH", text);
 }
 
 void MainWindow::on_pushButtonStart_clicked() 
@@ -247,7 +257,8 @@ void MainWindow::ReadJoystick()
 {
 	if (m_gamepad) 
 	{
-		m_model->AddPanTilt(m_ui->spinBoxDelay->value(), -m_gamepad->axisLeftX(), -m_gamepad->axisLeftY() );
+		m_model->AddPanTilt(m_ui->spinBoxDelay->value(), -m_gamepad->axisRightX(), -m_gamepad->axisLeftY(),
+			m_ui->horizontalSliderPanSensitivity->value(), m_ui->horizontalSliderTiltSensitivity->value());
 		m_model->AddColor(m_ui->spinBoxDelay->value());
 	}
 	DrawPlot();
@@ -338,6 +349,20 @@ void MainWindow::onUpdateColor(QColor const& color)
 	m_ui->labelColor->setPixmap(pix);
 	//QString trc = QString("background-color: %1; border-radius: 10px;").arg(color.name());
 	//m_colorLabel->setStyleSheet(trc);
+}
+
+void MainWindow::OnSetChannelData(uint16_t chan, uint8_t value)
+{
+	if (chan == 0)
+	{
+		return;
+	}
+	if (chan >= m_ui->tableWidgetChannels->rowCount())
+	{
+		return;
+	}
+
+	m_ui->tableWidgetChannels->item(chan - 1 ,0)->setText(QString::number(value));
 }
 
 void MainWindow::onUpdateSettingsGUI()

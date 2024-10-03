@@ -27,7 +27,6 @@ OutputManager::OutputManager():
 	connect(m_playbackTimer.get(), SIGNAL(timeout()), this, SLOT(TriggerTimedOutputData()));
 	connect(this, SIGNAL(finished()), m_playbackTimer.get(), SLOT(stop()));
 	connect(this, SIGNAL(finished()), &m_playbackThread, SLOT(quit()));
-
 }
 
 OutputManager::~OutputManager()
@@ -54,13 +53,13 @@ void OutputManager::StopDataOut()
 
 
 	//stop timer
-		CloseOutputs();
-
+	CloseOutputs();
 }
 
 void OutputManager::SetData(uint16_t chan, uint8_t value)
 {
 	m_seqData[chan - 1] = value;
+	emit EmitChannelData(chan, value);
 }
 
 void OutputManager::StartDataOut()
@@ -71,38 +70,35 @@ void OutputManager::StartDataOut()
 
 bool OutputManager::OpenOutputs()
 {
-	//for (auto const& o : m_outputs)
-	//{
 	if (m_output)
+	{
 		return m_output->Open();
-	//}
+	}
 	return true;
 }
 
 void OutputManager::CloseOutputs()
 {
-	//for (auto const& o : m_outputs)
-	//{
 	if (m_output)
+	{
 		m_output->Close();
-	//}
+	}
 }
 
 void OutputManager::OutputData(uint8_t* data)
 {
 	//TODO: multithread
-	//for (auto const& o : m_outputs)
-	//{
-	if(m_output)
+	if (m_output)
+	{
 		m_output->OutputFrame(data);
-	//}
+	}
 }
 
 void OutputManager::ReadSettings(QSettings* sett)
 {
 	sett->beginGroup("output");
-	auto stype = sett->value("out_type").toString();
-	auto ipaddress = sett->value("ip_address").toString();
+	auto stype = sett->value("out_type", "E131").toString();
+	auto ipaddress = sett->value("ip_address", "192.168.1.50").toString();
 	auto start_channel = sett->value("start_channel", 1).toUInt();
 	auto start_universe = sett->value("start_universe", 1).toUInt();
 	auto universe_size = sett->value("universe_size", 512).toUInt();
@@ -112,14 +108,30 @@ void OutputManager::ReadSettings(QSettings* sett)
 
 void OutputManager::SaveSettings(QSettings* sett)
 {
-	//sett->beginGroup("output");
-	
-	//sett->endGroup();
+	if (!m_output)
+	{
+		return ;
+	}
+	sett->beginGroup("output");
+	sett->setValue("out_type", m_output->GetName());
+	sett->setValue("ip_address", m_output->IP);
+	sett->setValue("start_channel", m_output->StartChannel);
+	sett->setValue("universe_size", m_output->Channels);
+
+	if (E131Output* e = dynamic_cast<E131Output*>(m_output.get()))
+	{
+		sett->setValue("start_universe", e->Universe);
+	}
+	if (ArtNetOutput* a = dynamic_cast<ArtNetOutput*>(m_output.get()))
+	{
+		sett->setValue("start_universe", a->Universe);
+	}
+	sett->endGroup();
 }
 
 bool OutputManager::LoadOutput(QString const& type, QString const& ipAddress, uint32_t const& start_universe, uint32_t const& start_channel, uint32_t const& universe_size)
 {
-	if ("DDP" == type)
+	if (type.compare("DDP" ,Qt::CaseInsensitive) == 0)
 	{
 		auto ddp = std::make_unique<DDPOutput>();
 		ddp->IP = ipAddress;
@@ -129,7 +141,7 @@ bool OutputManager::LoadOutput(QString const& type, QString const& ipAddress, ui
 		ddp->Channels = universe_size;
 		m_output = (std::move(ddp));
 	}
-	else if ("E131" == type)
+	else if (type.compare("E131", Qt::CaseInsensitive) == 0)
 	{
 		auto e131 = std::make_unique<E131Output>();
 		e131->IP = ipAddress;
@@ -139,7 +151,7 @@ bool OutputManager::LoadOutput(QString const& type, QString const& ipAddress, ui
 		e131->Channels = universe_size;//todo fix
 		m_output = (std::move(e131));
 	}
-	else if ("ArtNet" == type)
+	else if (type.compare("ArtNet", Qt::CaseInsensitive) == 0)
 	{
 		auto artnet = std::make_unique<ArtNetOutput>();
 		artnet->IP = ipAddress;
@@ -149,7 +161,7 @@ bool OutputManager::LoadOutput(QString const& type, QString const& ipAddress, ui
 		artnet->Channels = universe_size;//todo fix
 		m_output = (std::move(artnet));
 	}
-	else if ("DMX" == type)
+	else if (type.compare("DMX", Qt::CaseInsensitive) == 0)
 	{
 		auto dmx = std::make_unique<DMXOutput>();
 		dmx->IP = ipAddress;
@@ -158,7 +170,7 @@ bool OutputManager::LoadOutput(QString const& type, QString const& ipAddress, ui
 		dmx->Channels = universe_size;//todo fix
 		m_output = (std::move(dmx));
 	}
-	else if ("OpenDMX" == type)
+	else if (type.compare("OpenDMX", Qt::CaseInsensitive) == 0)
 	{
 		auto opendmx = std::make_unique<OpenDMXOutput>();
 		opendmx->IP = ipAddress;

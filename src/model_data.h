@@ -30,7 +30,7 @@ public:
 	MotorData* const GetTiltMotor() const { return m_tilt.get(); }
 	DmxColor* const GetColor() const { return m_color.get(); }
 
-	void AddPanTilt(int time_ms, double pan, double tilt);
+	void AddPanTilt(int time_ms, double pan, double tilt, double pan_sen, double tilt_sen);
 	void AddColor(int time_ms);
 	void ClearData();
 	void WriteXMLFile(QString const& xmlFileName) const;
