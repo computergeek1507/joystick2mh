@@ -13,8 +13,8 @@ public:
 	virtual void Close() = 0;
 	virtual QString GetName() const = 0;
 
-	uint64_t StartChannel{0};
-	uint64_t Channels{0};
+	uint32_t StartChannel{0};
+	uint32_t Channels{0};
 	QString IP;
 	//bool Enabled{true};
 };

@@ -41,7 +41,7 @@ public:
 	void OpenModelFile(QString const& xmlFileName);
 
 Q_SIGNALS:
-	void SetChannelData(uint16_t chan, uint8_t value);
+	void SetChannelData(uint32_t chan, uint8_t value);
 	void OnSetColor(QColor const& color);
 
 private:

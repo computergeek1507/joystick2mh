@@ -56,7 +56,7 @@ void OutputManager::StopDataOut()
 	CloseOutputs();
 }
 
-void OutputManager::SetData(uint16_t chan, uint8_t value)
+void OutputManager::SetData(uint32_t chan, uint8_t value)
 {
 	m_seqData[chan - 1] = value;
 	emit EmitChannelData(chan, value);

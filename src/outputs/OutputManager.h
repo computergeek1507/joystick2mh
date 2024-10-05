@@ -37,13 +37,13 @@ public Q_SLOTS:
     void TriggerTimedOutputData();
     void StopDataOut();
     void StartDataOut();
-    void SetData(uint16_t chan, uint8_t value);
+    void SetData(uint32_t chan, uint8_t value);
 
 Q_SIGNALS:
     void AddController(bool enabled, QString const& type, QString const& ip, QString const& channels);
-    void SetChannelCount(uint64_t channels);
+    void SetChannelCount(uint32_t channels);
 
-    void EmitChannelData(uint16_t chan, uint8_t value);
+    void EmitChannelData(uint32_t chan, uint8_t value);
 
 private:
     std::unique_ptr<BaseOutput> m_output;

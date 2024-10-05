@@ -54,7 +54,7 @@ public Q_SLOTS:
 	void onUpdateSettingsGUI();
 	void RedrawModelSettings();
 
-	void OnSetChannelData(uint16_t chan, uint8_t value);
+	void OnSetChannelData(uint32_t chan, uint8_t value);
 
 	void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
 

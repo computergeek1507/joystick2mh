@@ -368,7 +368,7 @@ void MainWindow::onUpdateColor(QColor const& color)
 	//m_colorLabel->setStyleSheet(trc);
 }
 
-void MainWindow::OnSetChannelData(uint16_t chan, uint8_t value)
+void MainWindow::OnSetChannelData(uint32_t chan, uint8_t value)
 {
 	if (chan == 0)
 	{

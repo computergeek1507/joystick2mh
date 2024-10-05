@@ -24,8 +24,8 @@ ModelData::ModelData(QSettings* sett, OutputManager* out):
 void ModelData::ReadSettings(QSettings* sett)
 {
 	sett->beginGroup("tilt");
-	m_tilt->channel_coarse = sett->value("channel_coarse", 0).toInt();
-	m_tilt->channel_fine = sett->value("channel_fine", 0).toInt();
+	m_tilt->channel_coarse = sett->value("channel_coarse", 0).toUInt();
+	m_tilt->channel_fine = sett->value("channel_fine", 0).toUInt();
 	m_tilt->min_limit = sett->value("min_limit", -180).toInt();
 	m_tilt->max_limit = sett->value("max_limit", 180).toInt();
 	m_tilt->range_of_motion = sett->value("range_of_motion", 150.0).toFloat();
@@ -35,8 +35,8 @@ void ModelData::ReadSettings(QSettings* sett)
 	sett->endGroup();
 
 	sett->beginGroup("pan");
-	m_pan->channel_coarse = sett->value("channel_coarse", 0).toInt();
-	m_pan->channel_fine = sett->value("channel_fine", 0).toInt();
+	m_pan->channel_coarse = sett->value("channel_coarse", 0).toUInt();
+	m_pan->channel_fine = sett->value("channel_fine", 0).toUInt();
 	m_pan->min_limit = sett->value("min_limit", -180).toInt();
 	m_pan->max_limit = sett->value("max_limit", 180).toInt();
 	m_pan->range_of_motion = sett->value("range_of_motion", 540.0).toFloat();
@@ -511,8 +511,8 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 			if (currentElementName == "PanMotor")
 			{
 				auto const& attributes = xmlReader.attributes();
-				SetIntValue(attributes, "ChannelCoarse", m_pan->channel_coarse);
-				SetIntValue(attributes, "ChannelFine", m_pan->channel_fine);
+				SetUIntValue(attributes, "ChannelCoarse", m_pan->channel_coarse);
+				SetUIntValue(attributes, "ChannelFine", m_pan->channel_fine);
 				SetIntValue(attributes, "MinLimit", m_pan->min_limit);
 				SetIntValue(attributes, "OrientZero", m_pan->orient_zero);
 				SetIntValue(attributes, "OrientHome", m_pan->orient_home);
@@ -522,8 +522,8 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 			if (currentElementName == "TiltMotor")
 			{
 				auto const& attributes = xmlReader.attributes();
-				SetIntValue(attributes, "ChannelCoarse", m_tilt->channel_coarse);
-				SetIntValue(attributes, "ChannelFine", m_tilt->channel_fine);
+				SetUIntValue(attributes, "ChannelCoarse", m_tilt->channel_coarse);
+				SetUIntValue(attributes, "ChannelFine", m_tilt->channel_fine);
 				SetIntValue(attributes, "MinLimit", m_tilt->min_limit);
 				SetIntValue(attributes, "OrientZero", m_tilt->orient_zero);
 				SetIntValue(attributes, "OrientHome", m_tilt->orient_home);
