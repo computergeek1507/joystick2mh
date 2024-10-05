@@ -46,6 +46,7 @@ public Q_SLOTS:
 	void on_pushButtonStop_clicked();
 	void on_pushButtonReset_clicked();
 	void on_checkBoxOutput_stateChanged(int state) ;
+	void on_spinBoxDelay_valueChanged(int val);
 	void LoadControllers();
 	void ReadJoystick();
 	void DrawPlot();

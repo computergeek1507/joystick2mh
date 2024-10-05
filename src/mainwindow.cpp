@@ -61,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m_output->ReadSettings(m_settings.get());
 	//connect(m_model.get(), &ModelData::SetChannelData, m_output.get(), &OutputManager::SetData);
-	//connect(m_model.get(), &ModelData::SetChannelData, m_output.get(), &OutputManager::SetData);
+	connect(m_output.get(), &OutputManager::EmitChannelData, this, &MainWindow::OnSetChannelData);
 
 	auto pan_sensitivity = m_settings->value("pan_sensitivity", 90).toInt();
 	auto tilt_sensitivity = m_settings->value("tilt_sensitivity", 90).toInt();
@@ -92,6 +92,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+	m_controllerReader->stop();
 	m_model->SaveSettings(m_settings.get());
 	m_output->SaveSettings(m_settings.get());
 
@@ -157,6 +158,8 @@ void MainWindow::LoadControllers()
 				LogMessage("Controller Disconnected", spdlog::level::warn);
 			}
 			});
+
+		m_controllerReader->start(m_ui->spinBoxDelay->value());
 	}
 	else 
 	{
@@ -220,13 +223,13 @@ void MainWindow::on_pushButtonStart_clicked()
 	m_recording = true;
 	m_ui->pushButtonStop->setEnabled(true);
 	m_ui->pushButtonStart->setEnabled(false);
-	m_controllerReader->start(m_ui->spinBoxDelay->value());
+	//m_controllerReader->start(m_ui->spinBoxDelay->value());
 }
 
 void MainWindow::on_pushButtonStop_clicked() 
 {
 	m_recording = false;
-	m_controllerReader->stop();
+	//m_controllerReader->stop();
 	m_ui->pushButtonStop->setEnabled(false);
 	m_ui->pushButtonStart->setEnabled(true);
 }
@@ -253,15 +256,29 @@ void MainWindow::on_checkBoxOutput_stateChanged(int state)
 	}
 }
 
+void MainWindow::on_spinBoxDelay_valueChanged(int val) 
+{
+	if(m_controllerReader)
+	m_controllerReader->setInterval(val);
+}
+
 void MainWindow::ReadJoystick()
 {
 	if (m_gamepad) 
 	{
-		m_model->AddPanTilt(m_ui->spinBoxDelay->value(), -m_gamepad->axisRightX(), -m_gamepad->axisLeftY(),
-			m_ui->horizontalSliderPanSensitivity->value(), m_ui->horizontalSliderTiltSensitivity->value());
-		m_model->AddColor(m_ui->spinBoxDelay->value());
+		if (m_recording) 
+		{
+			m_model->AddPanTilt(m_ui->spinBoxDelay->value(), -m_gamepad->axisRightX(), -m_gamepad->axisLeftY(),
+				m_ui->horizontalSliderPanSensitivity->value(), m_ui->horizontalSliderTiltSensitivity->value());
+			m_model->AddColor(m_ui->spinBoxDelay->value());
+			DrawPlot();
+		}
+		else
+		{
+			m_model->CalcPanTilt(-m_gamepad->axisRightX(), -m_gamepad->axisLeftY(),
+				m_ui->horizontalSliderPanSensitivity->value(), m_ui->horizontalSliderTiltSensitivity->value());
+		}
 	}
-	DrawPlot();
 }
 
 void MainWindow::LogMessage(QString const& message, spdlog::level::level_enum llvl)

@@ -17,7 +17,7 @@ ModelData::ModelData(QSettings* sett, OutputManager* out):
 
 	connect(this, &ModelData::SetChannelData, out, &OutputManager::SetData);
 	if (m_color) {
-		connect(m_color.get(), &DmxColor::SetChannelData, out, &OutputManager::SetData, Qt::UniqueConnection);
+		//connect(m_color.get(), &DmxColor::SetChannelData, out, &OutputManager::SetData, Qt::UniqueConnection);
 	}
 }
 
@@ -53,7 +53,7 @@ void ModelData::ReadSettings(QSettings* sett)
 		if (m_color) {
 			disconnect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData);
 		}
-		m_color = std::make_unique<DmxColorRGB>();
+		m_color = QSharedPointer<DmxColorRGB>(new DmxColorRGB);
 		m_color->ReadSettings(sett);
 		connect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData, Qt::UniqueConnection);
 		break;
@@ -61,7 +61,7 @@ void ModelData::ReadSettings(QSettings* sett)
 		if (m_color) {
 			disconnect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData);
 		}
-		m_color = std::make_unique<DmxColorWheel>();
+		m_color = QSharedPointer<DmxColorWheel>(new DmxColorWheel);
 		m_color->ReadSettings(sett);
 		connect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData, Qt::UniqueConnection);
 		break;
@@ -126,6 +126,14 @@ void ModelData::AddPanTilt(int time_ms, double pan, double tilt, double pan_sen,
 	CalcPanTiltDMX(pt);
 }
 
+void ModelData::CalcPanTilt( double pan, double tilt, double pan_sen, double tilt_sen)
+{
+	double scale_pan = (pan * pan_sen);
+	double scale_tilt = (tilt * tilt_sen);
+	PTDataPoint pt(0, scale_pan, scale_tilt);
+	CalcPanTiltDMX(pt);
+}
+
 void ModelData::AddColor(int time_ms)
 {
 	//auto& pt = m_pt_values.emplace_back(time_ms, pan, tilt);
@@ -148,7 +156,7 @@ void ModelData::AddColor(int time_ms)
 void ModelData::ChangeColor(QColor color) {
 	m_last_color = color;
 	if (m_color) {
-		//m_color->SetColorPixels(m_last_color);
+		m_color->SetColorPixels(m_last_color);
 	}
 
 	emit OnSetColor(m_last_color);
@@ -459,17 +467,17 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 							auto const val = attributes.value("DmxColorType");
 							if (val == "0")
 							{
-								auto rgbcolor = std::make_unique<DmxColorRGB>();
+								auto rgbcolor = QSharedPointer<DmxColorRGB>(new DmxColorRGB);
 								SetUIntValue(attributes, "DmxRedChannel", rgbcolor->red_channel);
 								SetUIntValue(attributes, "DmxGreenChannel", rgbcolor->green_channel);
 								SetUIntValue(attributes, "DmxBlueChannel", rgbcolor->blue_channel);
 								SetUIntValue(attributes, "DmxWhiteChannel", rgbcolor->white_channel);
-								m_color = std::move(rgbcolor);
+								m_color = /*td::move*/(rgbcolor);
 								connect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData, Qt::UniqueConnection);
 							}
 							else if (val == "1")
 							{
-								auto wheelcolor = std::make_unique<DmxColorWheel>();
+								auto wheelcolor = QSharedPointer<DmxColorWheel>(new DmxColorWheel);
 								SetUIntValue(attributes, "DmxColorWheelChannel", wheelcolor->wheel_channel);
 								SetUIntValue(attributes, "DmxDimmerChannel", wheelcolor->dimmer_channel);
 								for (int k =0;k<100;++k) 
@@ -486,7 +494,7 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 									wheelcolor->colors.emplace_back(QColor(color), dmx);
 								}
 								//DmxColorWheelColor13="#c0c0c0" DmxColorWheelDMX13="104"
-								m_color = std::move(wheelcolor);
+								m_color = /*td::move*/(wheelcolor);
 								connect(m_color.get(), &DmxColor::SetChannelData, m_out, &OutputManager::SetData, Qt::UniqueConnection);
 							}
 							if (m_color) 

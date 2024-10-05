@@ -10,6 +10,7 @@
 #include <QString>
 #include <QSettings>
 #include <QColor>
+#include <QSharedPointer>
 
 #include <memory>
 #include <vector>
@@ -31,6 +32,7 @@ public:
 	DmxColor* const GetColor() const { return m_color.get(); }
 
 	void AddPanTilt(int time_ms, double pan, double tilt, double pan_sen, double tilt_sen);
+	void CalcPanTilt(double pan, double tilt, double pan_sen, double tilt_sen);
 	void AddColor(int time_ms);
 	void ClearData();
 	void WriteXMLFile(QString const& xmlFileName) const;
@@ -61,7 +63,8 @@ private:
 
 	std::unique_ptr < MotorData> m_pan{nullptr};
 	std::unique_ptr < MotorData> m_tilt{ nullptr };
-	std::unique_ptr < DmxColor> m_color{ nullptr };
+	//std::unique_ptr < DmxColor> m_color{ nullptr };
+	QSharedPointer < DmxColor> m_color{ nullptr };
 	uint8_t m_data[20];
 
 	OutputManager* m_out;

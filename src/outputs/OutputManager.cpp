@@ -64,7 +64,7 @@ void OutputManager::SetData(uint16_t chan, uint8_t value)
 
 void OutputManager::StartDataOut()
 {
-	m_playbackTimer->setInterval(m_seqStepTime);
+	m_playbackTimer->setInterval(50);
 	m_playbackThread.start();
 }
 
