@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1060</width>
-    <height>1096</height>
+    <height>1123</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -63,6 +63,9 @@
              <width>200</width>
              <height>16777215</height>
             </size>
+           </property>
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
            </property>
            <property name="rowCount">
             <number>20</number>
@@ -1085,7 +1088,7 @@
      <x>0</x>
      <y>0</y>
      <width>1060</width>
-     <height>22</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

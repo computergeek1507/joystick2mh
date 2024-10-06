@@ -11,6 +11,7 @@
 //#include <QNetworkAccessManager>
 //#include <QNetworkReply>
 #include <QStandardPaths>
+#include <QInputDialog>
 //#include <QOperatingSystemVersion>
 
 #include "spdlog/spdlog.h"
@@ -151,10 +152,23 @@ void MainWindow::LoadControllers()
 			if (pressed) m_model->ChangeColor(Qt::white);
 			});
 
+		connect(m_gamepad.get(), &QGamepad::buttonDownChanged, this, [&](bool pressed) {
+			if (pressed)
+			{
+				m_model->ChangeGobo(-1);
+			}
+			});
+		connect(m_gamepad.get(), &QGamepad::buttonUpChanged, this, [&](bool pressed) {
+			if (pressed)
+			{
+				m_model->ChangeGobo(1);
+			}
+			});
 		connect(m_gamepad.get(), &QGamepad::connectedChanged, this, [&](bool connected) {
 			if (!connected) 
 			{ 
 				on_pushButtonStop_clicked(); 
+				m_controllerReader->stop();
 				LogMessage("Controller Disconnected", spdlog::level::warn);
 			}
 			});
@@ -258,8 +272,25 @@ void MainWindow::on_checkBoxOutput_stateChanged(int state)
 
 void MainWindow::on_spinBoxDelay_valueChanged(int val) 
 {
-	if(m_controllerReader)
-	m_controllerReader->setInterval(val);
+	if (m_controllerReader)
+	{
+		m_controllerReader->setInterval(val);
+	}
+}
+
+void MainWindow::on_tableWidgetChannels_cellDoubleClicked(int row, int column) 
+{
+	// getInt(QWidget *parent, const QString &title, const QString &label, int value = 0,
+	//int minValue = -2147483647, int maxValue = 2147483647,
+	//	int step = 1, bool* ok = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
+	auto label = QString("Channel %1").arg(row + 1);
+	auto sVal = m_ui->tableWidgetChannels->item(row, 0)->text();
+	bool ok;
+	auto new_val = QInputDialog::getInt(this, label, label,	sVal.toInt(), 0, 255, 1, &ok);
+	if (ok) 
+	{
+		m_output->SetData(row + 1, new_val);
+	}
 }
 
 void MainWindow::ReadJoystick()

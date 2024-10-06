@@ -10,9 +10,9 @@
 ModelData::ModelData(QSettings* sett, OutputManager* out):
 	m_out(out)
 {
-	memset(m_data, 0x00, sizeof(m_data));
-	m_pan = std::make_unique< MotorData>();
-	m_tilt = std::make_unique< MotorData>();
+	//memset(m_data, 0x00, sizeof(m_data));
+	m_pan = std::make_unique<MotorData>();
+	m_tilt = std::make_unique<MotorData>();
 	ReadSettings(sett);
 
 	connect(this, &ModelData::SetChannelData, out, &OutputManager::SetData);
@@ -43,6 +43,16 @@ void ModelData::ReadSettings(QSettings* sett)
 	m_pan->orient_zero = sett->value("orient_zero", 0).toInt();
 	m_pan->orient_home = sett->value("orient_home", 90).toInt();
 	m_pan->reverse = sett->value("reverse", false).toBool();
+	sett->endGroup();
+
+	sett->beginGroup("gobo");
+	gobo_chan = sett->value("channel", 0).toUInt();
+	auto values = sett->value("values", 0).toList();
+	gobo_values.clear();
+	for (auto val: values) 
+	{
+		gobo_values.push_back(val.toUInt());
+	}
 	sett->endGroup();
 
 	sett->beginGroup("color");
@@ -162,6 +172,24 @@ void ModelData::ChangeColor(QColor color) {
 	emit OnSetColor(m_last_color);
 }
 
+void ModelData::ChangeGobo(int diff)
+{
+	if (0u == gobo_chan)
+	{
+		return; 
+	}
+	gobo_index += diff;
+	if (gobo_index < 0) 
+	{
+		gobo_index = gobo_values.size() - 1;
+	}
+	if (gobo_index >= gobo_values.size())
+	{
+		gobo_index = 0;
+	}
+	emit SetChannelData(gobo_chan, gobo_values[gobo_index]);
+}
+
 void ModelData::CalcPanTiltDMX(PTDataPoint& point)
 {
 	int tilt_value_dmx = m_tilt->ConvertPostoCmd(point.tilt);
@@ -236,25 +264,26 @@ DMXStringData ModelData::CreatePanTiltDMXVCDate() const
 	QString vcTilt_f = "Active=TRUE|Id=ID_VALUECURVE_XVC|Type=Custom|Min=0.00|Max=100.00|RV=TRUE|Values=";
 	for (auto const& point : m_pt_values)
 	{
-		if (abs(prev_pan_course - point.pan_coarse_dmx) > 1)
+		bool last = &point != &m_pt_values.back();
+		if (abs(prev_pan_course - point.pan_coarse_dmx) > 1 || last)
 		{
 			vcPan_c += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.pan_coarse_dmx / 255.0, 0, 'f', 2);
 			prev_pan_course = point.pan_coarse_dmx;
 		}
 
-		if (abs(prev_pan_fine - point.pan_fine_dmx) > 1)
+		if (abs(prev_pan_fine - point.pan_fine_dmx) > 1 || last)
 		{
 			vcPan_f += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.pan_fine_dmx / 255.0, 0, 'f', 2);
 			prev_pan_fine = point.pan_fine_dmx;
 		}
 
-		if (abs(prev_tilt_course - point.tilt_coarse_dmx) > 1)
+		if (abs(prev_tilt_course - point.tilt_coarse_dmx) > 1 || last)
 		{
 			vcTilt_c += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.tilt_coarse_dmx / 255.0, 0, 'f', 2);
 			prev_tilt_course = point.tilt_coarse_dmx;
 		}
 		
-		if (abs(prev_tilt_fine - point.tilt_fine_dmx) > 1)
+		if (abs(prev_tilt_fine - point.tilt_fine_dmx) > 1 || last)
 		{
 			vcTilt_f += QString("%1:%2;").arg(curLen / (double)totalLength, 0, 'f', 2).arg(point.tilt_fine_dmx / 255.0, 0, 'f', 2);
 			prev_tilt_fine = point.tilt_fine_dmx;
@@ -340,7 +369,7 @@ void ModelData::SaveColorFile(QString const& type, QString const& xmlFileName) c
 	QString const& data = CreateColorVC();
 	QDir dir = fileName.dir();
 	QString baseName = fileName.baseName();
-	QString baseNameModified = baseName + "_" + type + "." + fileName.completeSuffix();
+	QString baseNameModified = baseName + "_" + type + ".vcc";
 	QFileInfo fileModified(dir, baseNameModified);
 	QString filePathModified = fileModified.filePath();
 	QFile xmlFile(filePathModified);
@@ -560,13 +589,13 @@ void ModelData::WriteCmdToPixel(int value, MotorData* motor)
 	//int coarse_channel = motor->GetChannelCoarse() - 1;
 	//int fine_channel = motor->GetChannelFine() - 1;
 
-	if (motor->channel_coarse >= 0) {
-		m_data[motor->channel_coarse -1] = msb;
+	if (motor->channel_coarse > 0) {
+		//m_data[motor->channel_coarse -1] = msb;
 		//buffer.SetPixel(coarse_channel, 0, msb_c, false, false, true);
 		emit SetChannelData(motor->channel_coarse, msb);
 	}
-	if (motor->channel_fine >= 0) {
-		m_data[motor->channel_fine - 1] = lsb;
+	if (motor->channel_fine > 0) {
+		//m_data[motor->channel_fine - 1] = lsb;
 		//buffer.SetPixel(fine_channel, 0, lsb_c, false, false, true);
 		emit SetChannelData(motor->channel_fine, lsb);
 	}

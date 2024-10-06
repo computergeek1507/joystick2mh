@@ -41,7 +41,7 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void AddController(bool enabled, QString const& type, QString const& ip, QString const& channels);
-    void SetChannelCount(uint32_t channels);
+    //void SetChannelCount(uint32_t channels);
 
     void EmitChannelData(uint32_t chan, uint8_t value);
 
@@ -51,7 +51,7 @@ private:
 
     std::unique_ptr<QTimer> m_playbackTimer{ nullptr };
     QThread m_playbackThread;
-    int m_seqStepTime{ 50 };
+    //int m_seqStepTime{ 50 };
 
     char m_seqData[MAX_CHANNELS];
 };
