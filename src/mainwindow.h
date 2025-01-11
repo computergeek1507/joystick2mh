@@ -46,6 +46,7 @@ public Q_SLOTS:
 	void on_pushButtonStop_clicked();
 	void on_pushButtonReset_clicked();
 	void on_pushButtonColor_clicked();
+	void on_pushButtonResetOff_clicked();
 	void on_checkBoxOutput_stateChanged(int state) ;
 	void on_spinBoxDelay_valueChanged(int val);
 	void on_tableWidgetChannels_cellDoubleClicked(int row, int column);
@@ -58,6 +59,8 @@ public Q_SLOTS:
 
 	void OnSetChannelData(uint32_t chan, uint8_t value);
 	void OnSetChannelName(uint32_t chan, QString name);
+
+	void on_horizontalSliderBrightness_valueChanged(int val);
 
 	void LogMessage(QString const& message , spdlog::level::level_enum llvl = spdlog::level::level_enum::debug);
 

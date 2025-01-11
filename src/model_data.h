@@ -33,12 +33,13 @@ public:
 
 	QColor const& GetQColor()const { return m_last_color; };
 
-	void AddPanTilt(int time_ms, double pan, double tilt, double pan_sen, double tilt_sen);
-	void CalcPanTilt(double pan, double tilt, double pan_sen, double tilt_sen);
+	void AddPanTilt(int time_ms, double pan, double tilt, double pan_sen, double tilt_sen, int pan_off, int tilt_off);
+	void CalcPanTilt(double pan, double tilt, double pan_sen, double tilt_sen, int pan_off, int tilt_off);
 	void AddColor(int time_ms);
 	void ClearData();
 	void WriteXMLFile(QString const& xmlFileName) const;
-	void ChangeColor(QColor color);
+	void ChangeColor(QColor color, uint8_t dimmer);
+	void ChangeBrightness(uint8_t dimmer);
 
 	void OpenModelFile(QString const& xmlFileName);
 
@@ -51,6 +52,7 @@ public:
 	uint32_t GetPrismChan() const { return prism_chan; }
 	uint32_t GetBlurChan() const { return blur_chan; }
 	uint32_t GetLampChan() const { return lamp_chan; }
+	uint32_t GetDimmerChan() const { return dimmer_chan; }
 
 Q_SIGNALS:
 	void SetChannelData(uint32_t chan, uint8_t value);
@@ -96,6 +98,8 @@ private:
 	uint32_t lamp_chan{ 0u };
 	uint8_t lamp_on_value{ 255u };
 	uint8_t lamp_off_value{ 0u };
+
+	uint32_t dimmer_chan{ 0u };
 
 	OutputManager* m_out;
 };

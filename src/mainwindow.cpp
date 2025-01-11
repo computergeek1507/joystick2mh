@@ -68,15 +68,22 @@ MainWindow::MainWindow(QWidget *parent)
 	auto pan_sensitivity = m_settings->value("pan_sensitivity", 90).toInt();
 	auto tilt_sensitivity = m_settings->value("tilt_sensitivity", 90).toInt();
 	auto record_delay = m_settings->value("record_delay", 200).toInt();
+
+	auto default_bright = m_settings->value("default_brightness", 127).toInt();
+	auto pan_offset = m_settings->value("pan_offset", 0).toInt();
+	auto tilt_offset = m_settings->value("tilt_offset", 0).toInt();
+
 	m_ui->spinBoxDelay->setValue(record_delay);
+
+	m_ui->horizontalSliderBrightness->setValue(default_bright);
+	m_ui->horizontalSliderPanOffset->setValue(pan_offset);
+	m_ui->horizontalSliderTiltOffset->setValue(tilt_offset);
 
 	onUpdateSettingsGUI();
 
 	connect(m_model.get(), &ModelData::OnSetColor, this, &MainWindow::onUpdateColor);
 
-
-	//m_colorLabel = new QLabel(this);
-	//m_ui->statusbar->addWidget(m_colorLabel, 1);
+	onUpdateColor(m_model->GetQColor());
 
 	m_controllerReader = new QTimer (this);
 	connect(m_controllerReader, &QTimer::timeout, this, &MainWindow::ReadJoystick);
@@ -103,6 +110,8 @@ MainWindow::~MainWindow()
 	m_settings->setValue("tilt_sensitivity", m_ui->horizontalSliderTiltSensitivity->value());
 	m_settings->setValue("record_delay", m_ui->spinBoxDelay->value());
 	m_settings->setValue("default_brightness", m_ui->horizontalSliderBrightness->value());
+	m_settings->setValue("pan_offset", m_ui->horizontalSliderPanOffset->value());
+	m_settings->setValue("tilt_offset", m_ui->horizontalSliderTiltOffset->value());
 	m_settings->sync();
 	delete m_ui;
 }
@@ -127,16 +136,16 @@ void MainWindow::LoadControllers()
 	{
 		m_gamepad = std::make_unique < QGamepad>(*gamepads.begin(), this);
 		connect(m_gamepad.get(), &QGamepad::buttonAChanged, this, [&](bool pressed) {
-			if(pressed) m_model->ChangeColor(Qt::green);
+			if(pressed) m_model->ChangeColor(Qt::green, m_ui->horizontalSliderBrightness->value());
 			});
 		connect(m_gamepad.get(), &QGamepad::buttonBChanged, this, [&](bool pressed) {
-			if (pressed) m_model->ChangeColor(Qt::red);
+			if (pressed) m_model->ChangeColor(Qt::red, m_ui->horizontalSliderBrightness->value());
 			});
 		connect(m_gamepad.get(), &QGamepad::buttonXChanged, this, [&](bool pressed) {
-			if (pressed) m_model->ChangeColor(Qt::blue);
+			if (pressed) m_model->ChangeColor(Qt::blue, m_ui->horizontalSliderBrightness->value());
 			});
 		connect(m_gamepad.get(), &QGamepad::buttonYChanged, this, [&](bool pressed) {
-			if (pressed) m_model->ChangeColor(Qt::yellow);
+			if (pressed) m_model->ChangeColor(Qt::yellow, m_ui->horizontalSliderBrightness->value());
 			});
 
 		connect(m_gamepad.get(), &QGamepad::buttonStartChanged, this, [&](bool pressed) {
@@ -149,10 +158,10 @@ void MainWindow::LoadControllers()
 			});
 
 		connect(m_gamepad.get(), &QGamepad::buttonR1Changed, this, [&](bool pressed) {
-			if (pressed) m_model->ChangeColor(Qt::black);
+			if (pressed) m_model->ChangeColor(Qt::black, 0);
 			});
 		connect(m_gamepad.get(), &QGamepad::buttonR2Changed, this, [&](bool pressed) {
-			if (pressed) m_model->ChangeColor(Qt::white);
+			if (pressed) m_model->ChangeColor(Qt::white, m_ui->horizontalSliderBrightness->value());
 			});
 
 		connect(m_gamepad.get(), &QGamepad::buttonDownChanged, this, [&](bool pressed) {
@@ -295,11 +304,31 @@ void MainWindow::on_spinBoxDelay_valueChanged(int val)
 
 void MainWindow::on_pushButtonColor_clicked() 
 {
-	QColor newColor = QColorDialog::getColor(m_model->GetQColor(), parentWidget());
-	if (newColor != m_model->GetQColor())
+	QColorDialog dlg(this);
+	//if (!title.isEmpty())
+	//	dlg.setWindowTitle(title);
+	//dlg.setOptions(options);
+	dlg.setCurrentColor(m_model->GetQColor());
+	if (dlg.exec() == QDialog::Accepted)
 	{
-		m_model->ChangeColor(newColor);
+		QColor const& newColor = dlg.selectedColor();
+		if ( newColor != m_model->GetQColor())
+		{
+			m_model->ChangeColor(newColor, m_ui->horizontalSliderBrightness->value());
+		}
 	}
+	//return dlg.selectedColor();
+	//QColor newColor = QColorDialog::getColor(m_model->GetQColor(), this);
+	//if (newColor.isValid() && newColor != m_model->GetQColor())
+	//{
+	//	m_model->ChangeColor(newColor);
+	//}
+}
+
+void MainWindow::on_pushButtonResetOff_clicked()
+{
+	m_ui->horizontalSliderPanOffset->setValue(0);
+	m_ui->horizontalSliderTiltOffset->setValue(0);
 }
 
 void MainWindow::on_tableWidgetChannels_cellDoubleClicked(int row, int column) 
@@ -307,7 +336,8 @@ void MainWindow::on_tableWidgetChannels_cellDoubleClicked(int row, int column)
 	// getInt(QWidget *parent, const QString &title, const QString &label, int value = 0,
 	//int minValue = -2147483647, int maxValue = 2147483647,
 	//	int step = 1, bool* ok = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
-	auto label = QString("Channel %1").arg(row + 1);
+	//auto label = QString("Channel %1").arg(row + 1);
+	auto label = m_ui->tableWidgetChannels->item(row, 0)->text();
 	auto sVal = m_ui->tableWidgetChannels->item(row, 1)->text();
 	bool ok;
 	auto new_val = QInputDialog::getInt(this, label, label,	sVal.toInt(), 0, 255, 1, &ok);
@@ -317,6 +347,11 @@ void MainWindow::on_tableWidgetChannels_cellDoubleClicked(int row, int column)
 	}
 }
 
+void MainWindow::on_horizontalSliderBrightness_valueChanged(int val) 
+{
+	m_model->ChangeBrightness(val);
+}
+
 void MainWindow::ReadJoystick()
 {
 	if (m_gamepad) 
@@ -324,14 +359,16 @@ void MainWindow::ReadJoystick()
 		if (m_recording) 
 		{
 			m_model->AddPanTilt(m_ui->spinBoxDelay->value(), -m_gamepad->axisRightX(), -m_gamepad->axisLeftY(),
-				m_ui->horizontalSliderPanSensitivity->value(), m_ui->horizontalSliderTiltSensitivity->value());
+				m_ui->horizontalSliderPanSensitivity->value(), m_ui->horizontalSliderTiltSensitivity->value(),
+				m_ui->horizontalSliderPanOffset->value(), m_ui->horizontalSliderTiltOffset->value());
 			m_model->AddColor(m_ui->spinBoxDelay->value());
 			DrawPlot();
 		}
 		else
 		{
 			m_model->CalcPanTilt(-m_gamepad->axisRightX(), -m_gamepad->axisLeftY(),
-				m_ui->horizontalSliderPanSensitivity->value(), m_ui->horizontalSliderTiltSensitivity->value());
+				m_ui->horizontalSliderPanSensitivity->value(), m_ui->horizontalSliderTiltSensitivity->value(),
+				m_ui->horizontalSliderPanOffset->value(), m_ui->horizontalSliderTiltOffset->value());
 		}
 	}
 }
@@ -549,7 +586,7 @@ void MainWindow::RedrawModelSettings()
 	OnSetChannelName(m_model->GetBlurChan(), "Blur");
 	OnSetChannelName(m_model->GetPrismChan(), "Prism");
 	OnSetChannelName(m_model->GetLampChan(), "Lamp");
-
+	OnSetChannelName(m_model->GetDimmerChan(), "Dimmer");
 }
 
 void MainWindow::OpenFile(QString const& path)

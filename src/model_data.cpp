@@ -83,6 +83,10 @@ void ModelData::ReadSettings(QSettings* sett)
 	lamp_off_value = sett->value("off_value", 0).toUInt();
 	sett->endGroup();
 
+	sett->beginGroup("dimmer");
+	dimmer_chan = sett->value("channel", 0).toUInt();
+	sett->endGroup();
+
 	sett->beginGroup("color");
 	DmxColorType col_mode = static_cast<DmxColorType>(sett->value("mode", 0).toInt());
 
@@ -159,9 +163,13 @@ void ModelData::SaveSettings(QSettings* sett) const
 	sett->endGroup();
 
 	sett->beginGroup("lamp");
-		sett->setValue("channel", lamp_chan);
-		sett->setValue("on_value", lamp_on_value);
-		sett->setValue("off_value", lamp_off_value);
+	sett->setValue("channel", lamp_chan);
+	sett->setValue("on_value", lamp_on_value);
+	sett->setValue("off_value", lamp_off_value);
+	sett->endGroup();
+
+	sett->beginGroup("dimmer");
+	sett->setValue("channel", dimmer_chan);
 	sett->endGroup();
 }
 
@@ -175,7 +183,7 @@ void ModelData::ClearData()
 }
 
 //-1.0 to 1.0
-void ModelData::AddPanTilt(int time_ms, double pan, double tilt, double pan_sen, double tilt_sen)
+void ModelData::AddPanTilt(int time_ms, double pan, double tilt, double pan_sen, double tilt_sen, int pan_off, int tilt_off)
 {
 	double scale_pan = (pan * pan_sen);
 	double scale_tilt = (tilt * tilt_sen);
@@ -188,15 +196,15 @@ void ModelData::AddPanTilt(int time_ms, double pan, double tilt, double pan_sen,
 	//		return;
 	//	}
 	//}
-	auto& pt = m_pt_values.emplace_back(time_ms, scale_pan, scale_tilt);
+	auto& pt = m_pt_values.emplace_back(time_ms, scale_pan + pan_off, scale_tilt + tilt_off);
 	CalcPanTiltDMX(pt);
 }
 
-void ModelData::CalcPanTilt( double pan, double tilt, double pan_sen, double tilt_sen)
+void ModelData::CalcPanTilt( double pan, double tilt, double pan_sen, double tilt_sen, int pan_off, int tilt_off)
 {
 	double scale_pan = (pan * pan_sen);
 	double scale_tilt = (tilt * tilt_sen);
-	PTDataPoint pt(0, scale_pan, scale_tilt);
+	PTDataPoint pt(0, scale_pan + pan_off, scale_tilt + tilt_off);
 	CalcPanTiltDMX(pt);
 }
 
@@ -219,7 +227,7 @@ void ModelData::AddColor(int time_ms)
 	m_color_values.emplace_back(time_ms, m_last_color);
 }
 
-void ModelData::ChangeColor(QColor color) {
+void ModelData::ChangeColor(QColor color, uint8_t dimmer) {
 	m_last_color = color;
 	if (m_color) {
 		m_color->SetColorPixels(m_last_color);
@@ -229,8 +237,20 @@ void ModelData::ChangeColor(QColor color) {
 	{
 		emit SetChannelData(lamp_chan, lamp_on_value);
 	}
+	if (0u != dimmer_chan)
+	{
+		emit SetChannelData(dimmer_chan, dimmer);
+	}
 
 	emit OnSetColor(m_last_color);
+}
+
+void ModelData::ChangeBrightness(uint8_t dimmer)
+{
+	if (0u != dimmer_chan)
+	{
+		emit SetChannelData(dimmer_chan, dimmer);
+	}
 }
 
 void ModelData::ChangeGobo(int diff)
@@ -569,6 +589,7 @@ void ModelData::OpenModelFile(QString const& xmlFileName)
 					if (type == "DmxMovingHeadAdv")
 					{
 						//SetDoubleValue(attributes, "DmxPanDegOfRot", m_pan->range_of_motion);
+						SetUIntValue(attributes, "MhDimmerChannel", dimmer_chan);
 						if (attributes.hasAttribute("DmxColorType"))
 						{
 							if (m_color) {
