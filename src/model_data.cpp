@@ -19,6 +19,16 @@ ModelData::ModelData(QSettings* sett, OutputManager* out):
 	if (m_color) {
 		//connect(m_color.get(), &DmxColor::SetChannelData, out, &OutputManager::SetData, Qt::UniqueConnection);
 	}
+
+	if (0u != blur_chan)
+	{
+		emit SetChannelData(blur_chan, blur_off_value);
+	}
+	
+	if (0u != prism_chan)
+	{
+		emit SetChannelData(prism_chan, prism_off_value);
+	}
 }
 
 void ModelData::ReadSettings(QSettings* sett)
@@ -53,6 +63,24 @@ void ModelData::ReadSettings(QSettings* sett)
 	{
 		gobo_values.push_back(val.toUInt());
 	}
+	sett->endGroup();
+
+	sett->beginGroup("prism");
+	prism_chan = sett->value("channel", 0).toUInt();
+	prism_on_value = sett->value("on_value", 255).toUInt();
+	prism_off_value = sett->value("off_value", 0).toUInt();
+	sett->endGroup();
+
+	sett->beginGroup("blur");
+	blur_chan = sett->value("channel", 0).toUInt();
+	blur_on_value = sett->value("on_value", 255).toUInt();
+	blur_off_value = sett->value("off_value", 0).toUInt();
+	sett->endGroup();
+
+	sett->beginGroup("lamp");
+	lamp_chan = sett->value("channel", 0).toUInt();
+	lamp_on_value = sett->value("on_value", 255).toUInt();
+	lamp_off_value = sett->value("off_value", 0).toUInt();
 	sett->endGroup();
 
 	sett->beginGroup("color");
@@ -106,6 +134,34 @@ void ModelData::SaveSettings(QSettings* sett) const
 
 	sett->beginGroup("color");
 	m_color->SaveSettings(sett);
+	sett->endGroup();
+
+	sett->beginGroup("gobo");
+	sett->setValue("channel", gobo_chan);
+	auto values = QVariantList();
+	for (auto val : gobo_values)
+	{
+		values.push_back(val);
+	}
+	sett->setValue("values", values);
+	sett->endGroup();
+
+	sett->beginGroup("prism");
+	sett->setValue("channel", prism_chan);
+	sett->setValue("on_value", prism_on_value);
+	sett->setValue("off_value", prism_off_value);
+	sett->endGroup();
+
+	sett->beginGroup("blur");
+	sett->setValue("channel", blur_chan);
+	sett->setValue("on_value", blur_on_value);
+	sett->setValue("off_value", blur_off_value);
+	sett->endGroup();
+
+	sett->beginGroup("lamp");
+		sett->setValue("channel", lamp_chan);
+		sett->setValue("on_value", lamp_on_value);
+		sett->setValue("off_value", lamp_off_value);
 	sett->endGroup();
 }
 
@@ -169,6 +225,11 @@ void ModelData::ChangeColor(QColor color) {
 		m_color->SetColorPixels(m_last_color);
 	}
 
+	if (0u != lamp_chan)
+	{
+		emit SetChannelData(lamp_chan, lamp_on_value);
+	}
+
 	emit OnSetColor(m_last_color);
 }
 
@@ -188,6 +249,26 @@ void ModelData::ChangeGobo(int diff)
 		gobo_index = 0;
 	}
 	emit SetChannelData(gobo_chan, gobo_values[gobo_index]);
+}
+
+void ModelData::ToggleBlur()
+{
+	if (0u == blur_chan)
+	{
+		return;
+	}
+	blur_on = !blur_on;
+	emit SetChannelData(blur_chan, blur_on ? blur_on_value: blur_off_value);
+}
+
+void ModelData::TogglePrism() 
+{
+	if (0u == prism_chan)
+	{
+		return;
+	}
+	prism_on = !prism_on;
+	emit SetChannelData(prism_chan, prism_on ? prism_on_value : prism_off_value);
 }
 
 void ModelData::CalcPanTiltDMX(PTDataPoint& point)

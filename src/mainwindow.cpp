@@ -12,6 +12,7 @@
 //#include <QNetworkReply>
 #include <QStandardPaths>
 #include <QInputDialog>
+#include <QColorDialog>
 //#include <QOperatingSystemVersion>
 
 #include "spdlog/spdlog.h"
@@ -73,6 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect(m_model.get(), &ModelData::OnSetColor, this, &MainWindow::onUpdateColor);
 
+
 	//m_colorLabel = new QLabel(this);
 	//m_ui->statusbar->addWidget(m_colorLabel, 1);
 
@@ -100,6 +102,7 @@ MainWindow::~MainWindow()
 	m_settings->setValue("pan_sensitivity", m_ui->horizontalSliderPanSensitivity->value());
 	m_settings->setValue("tilt_sensitivity", m_ui->horizontalSliderTiltSensitivity->value());
 	m_settings->setValue("record_delay", m_ui->spinBoxDelay->value());
+	m_settings->setValue("default_brightness", m_ui->horizontalSliderBrightness->value());
 	m_settings->sync();
 	delete m_ui;
 }
@@ -162,6 +165,18 @@ void MainWindow::LoadControllers()
 			if (pressed)
 			{
 				m_model->ChangeGobo(1);
+			}
+			});
+		connect(m_gamepad.get(), &QGamepad::buttonLeftChanged, this, [&](bool pressed) {
+			if (pressed)
+			{
+				m_model->TogglePrism();
+			}
+			});
+		connect(m_gamepad.get(), &QGamepad::buttonRightChanged, this, [&](bool pressed) {
+			if (pressed)
+			{
+				m_model->ToggleBlur();
 			}
 			});
 		connect(m_gamepad.get(), &QGamepad::connectedChanged, this, [&](bool connected) {
@@ -278,13 +293,22 @@ void MainWindow::on_spinBoxDelay_valueChanged(int val)
 	}
 }
 
+void MainWindow::on_pushButtonColor_clicked() 
+{
+	QColor newColor = QColorDialog::getColor(m_model->GetQColor(), parentWidget());
+	if (newColor != m_model->GetQColor())
+	{
+		m_model->ChangeColor(newColor);
+	}
+}
+
 void MainWindow::on_tableWidgetChannels_cellDoubleClicked(int row, int column) 
 {
 	// getInt(QWidget *parent, const QString &title, const QString &label, int value = 0,
 	//int minValue = -2147483647, int maxValue = 2147483647,
 	//	int step = 1, bool* ok = nullptr, Qt::WindowFlags flags = Qt::WindowFlags());
 	auto label = QString("Channel %1").arg(row + 1);
-	auto sVal = m_ui->tableWidgetChannels->item(row, 0)->text();
+	auto sVal = m_ui->tableWidgetChannels->item(row, 1)->text();
 	bool ok;
 	auto new_val = QInputDialog::getInt(this, label, label,	sVal.toInt(), 0, 255, 1, &ok);
 	if (ok) 
@@ -391,12 +415,14 @@ void MainWindow::DrawPlot()
 
 void MainWindow::onUpdateColor(QColor const& color)
 {
-	QPixmap pix(40, 20);
-	pix.fill(color);
+	//QPixmap pix(40, 20);
+	//pix.fill(color);
 	//m_colorLabel->setPixmap(pix);
-	m_ui->labelColor->setPixmap(pix);
+	//m_ui->labelColor->setPixmap(pix);
 	//QString trc = QString("background-color: %1; border-radius: 10px;").arg(color.name());
 	//m_colorLabel->setStyleSheet(trc);
+	m_ui->pushButtonColor->setStyleSheet("color: " + color.name());
+	m_ui->pushButtonColor->setStyleSheet("background-color: " + color.name());
 }
 
 void MainWindow::OnSetChannelData(uint32_t chan, uint8_t value)
@@ -409,8 +435,20 @@ void MainWindow::OnSetChannelData(uint32_t chan, uint8_t value)
 	{
 		return;
 	}
+	m_ui->tableWidgetChannels->item(chan - 1 ,1)->setText(QString::number(value));
+}
 
-	m_ui->tableWidgetChannels->item(chan - 1 ,0)->setText(QString::number(value));
+void MainWindow::OnSetChannelName(uint32_t chan, QString name)
+{
+	if (chan == 0)
+	{
+		return;
+	}
+	if (chan >= m_ui->tableWidgetChannels->rowCount())
+	{
+		return;
+	}
+	m_ui->tableWidgetChannels->item(chan - 1, 0)->setText(name);
 }
 
 void MainWindow::onUpdateSettingsGUI()
@@ -450,6 +488,9 @@ void MainWindow::RedrawModelSettings()
 		m_ui->spinBoxPanZero->setValue(m_model->GetPanMotor()->orient_zero);
 		m_ui->spinBoxPanForward->setValue(m_model->GetPanMotor()->orient_home);
 		m_ui->checkBoxPanReverse->setChecked(m_model->GetPanMotor()->reverse);
+
+		OnSetChannelName(m_model->GetPanMotor()->channel_coarse, "Pan Coarse");
+		OnSetChannelName(m_model->GetPanMotor()->channel_fine, "Pan Fine");
 	}
 	if (m_model && m_model->GetTiltMotor())
 	{
@@ -461,6 +502,9 @@ void MainWindow::RedrawModelSettings()
 		m_ui->spinBoxTiltZero->setValue(m_model->GetTiltMotor()->orient_zero);
 		m_ui->spinBoxTiltUp->setValue(m_model->GetTiltMotor()->orient_home);
 		m_ui->checkBoxTiltReverse->setChecked(m_model->GetTiltMotor()->reverse);
+
+		OnSetChannelName(m_model->GetTiltMotor()->channel_coarse, "Tilt Coarse");
+		OnSetChannelName(m_model->GetTiltMotor()->channel_fine, "Tilt Fine");
 	}
 
 	if (m_model && m_model->GetColor())
@@ -477,6 +521,10 @@ void MainWindow::RedrawModelSettings()
 				m_ui->spinBoxColorG->setValue(rgbc->green_channel);
 				m_ui->spinBoxColorB->setValue(rgbc->blue_channel);
 				m_ui->spinBoxColorW->setValue(rgbc->white_channel);
+				OnSetChannelName(rgbc->red_channel, "Color Red");
+				OnSetChannelName(rgbc->green_channel, "Color Green");
+				OnSetChannelName(rgbc->blue_channel, "Color Blue");
+				OnSetChannelName(rgbc->white_channel, "Color White");
 			}
 			break;
 			case DmxColorType::Wheel:
@@ -485,13 +533,23 @@ void MainWindow::RedrawModelSettings()
 				auto wheelc = dynamic_cast<DmxColorWheel*>(m_model->GetColor());
 				m_ui->spinBoxWheelDimmer->setValue(wheelc->dimmer_channel);
 				m_ui->spinBoxWheelChannel->setValue(wheelc->wheel_channel);
+
+				OnSetChannelName(wheelc->dimmer_channel, "Color Dimmer");
+				OnSetChannelName(wheelc->wheel_channel, "Color Wheel");
+
 			}
 			break;
 		}
 		m_ui->spinBoxShutter->setValue(m_model->GetColor()->shutter_channel);
 		m_ui->spinBoxShutterValue->setValue(m_model->GetColor()->shutter_on_value);
-
+		OnSetChannelName(m_model->GetColor()->shutter_channel, "Shutter");
 	}
+
+	OnSetChannelName(m_model->GetGoboChan(), "Gobo");
+	OnSetChannelName(m_model->GetBlurChan(), "Blur");
+	OnSetChannelName(m_model->GetPrismChan(), "Prism");
+	OnSetChannelName(m_model->GetLampChan(), "Lamp");
+
 }
 
 void MainWindow::OpenFile(QString const& path)
