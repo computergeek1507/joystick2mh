@@ -1322,6 +1322,7 @@
     </property>
     <addaction name="actionOpen_Settings"/>
     <addaction name="actionOpen_Logs"/>
+    <addaction name="actionController_Map"/>
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
@@ -1493,6 +1494,11 @@
   <action name="actionOpen_Settings">
    <property name="text">
     <string>Open Settings...</string>
+   </property>
+  </action>
+  <action name="actionController_Map">
+   <property name="text">
+    <string>Controller Map...</string>
    </property>
   </action>
  </widget>

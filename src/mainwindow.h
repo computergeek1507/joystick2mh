@@ -41,6 +41,7 @@ public Q_SLOTS:
 
 	void on_actionOpen_Logs_triggered();
 	void on_actionOpen_Settings_triggered();
+	void on_actionController_Map_triggered();
 	void on_actionAbout_triggered();
 	void on_pushButtonStart_clicked();
 	void on_pushButtonStop_clicked();

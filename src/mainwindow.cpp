@@ -56,10 +56,10 @@ MainWindow::MainWindow(QWidget *parent)
 
 	setWindowTitle(windowTitle() + " v" + PROJECT_VER);
 
-	m_settings = std::make_unique< QSettings>(m_appdir + "/settings.txt", QSettings::IniFormat);
+	m_settings = std::make_unique<QSettings>(m_appdir + "/settings.txt", QSettings::IniFormat);
 
-	m_output = std::make_unique< OutputManager>();
-	m_model = std::make_unique< ModelData>(m_settings.get(), m_output.get());
+	m_output = std::make_unique<OutputManager>();
+	m_model = std::make_unique<ModelData>(m_settings.get(), m_output.get());
 
 	m_output->ReadSettings(m_settings.get());
 	//connect(m_model.get(), &ModelData::SetChannelData, m_output.get(), &OutputManager::SetData);
@@ -244,7 +244,12 @@ void MainWindow::on_actionOpen_Logs_triggered()
 void MainWindow::on_actionOpen_Settings_triggered()
 {
 	OpenFile(m_appdir + "/settings.txt");
+}
 
+void MainWindow::on_actionController_Map_triggered()
+{
+	QString text = "Right Joystick: Pan Degrees\nLeft Joystick: Tilt Degrees\nA Button: Green\nB Button: Red\nX Button: Blue\nY Button: Yellow\nR1 Button: Black\nR2 Button: White\nStart Button: Start/Stop Recording\nBack Button: Clear Recording\nUp/Down Buttons: Cycle Gobo\nLeft Button: Toggle Prism\nRight Button: Toggle Blur";
+	QMessageBox::about(this, "Controller Mapping", text);
 }
 
 void MainWindow::on_actionAbout_triggered()
