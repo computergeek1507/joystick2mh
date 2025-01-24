@@ -47,6 +47,8 @@ public:
 
 	void ToggleBlur();
 	void TogglePrism();
+	void LampOn();
+	void LampOff();
 
 	uint32_t GetGoboChan() const { return gobo_chan; }
 	uint32_t GetPrismChan() const { return prism_chan; }
@@ -98,6 +100,7 @@ private:
 	uint32_t lamp_chan{ 0u };
 	uint8_t lamp_on_value{ 255u };
 	uint8_t lamp_off_value{ 0u };
+	uint32_t lamp_off_on_delay{ 5000u };
 
 	uint32_t dimmer_chan{ 0u };
 

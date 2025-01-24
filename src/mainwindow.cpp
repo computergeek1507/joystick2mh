@@ -283,6 +283,16 @@ void MainWindow::on_pushButtonReset_clicked()
 	DrawPlot();
 }
 
+void MainWindow::on_pushButtonLampOff_clicked()
+{
+	m_model->LampOff();
+}
+
+void MainWindow::on_pushButtonLampOn_clicked()
+{
+	m_model->LampOn();
+}
+
 void MainWindow::on_checkBoxOutput_stateChanged(int state)
 {
 	if (m_output)

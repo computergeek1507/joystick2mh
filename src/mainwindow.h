@@ -48,6 +48,8 @@ public Q_SLOTS:
 	void on_pushButtonReset_clicked();
 	void on_pushButtonColor_clicked();
 	void on_pushButtonResetOff_clicked();
+	void on_pushButtonLampOff_clicked();
+	void on_pushButtonLampOn_clicked();
 	void on_checkBoxOutput_stateChanged(int state) ;
 	void on_spinBoxDelay_valueChanged(int val);
 	void on_tableWidgetChannels_cellDoubleClicked(int row, int column);

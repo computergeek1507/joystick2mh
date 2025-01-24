@@ -81,6 +81,7 @@ void ModelData::ReadSettings(QSettings* sett)
 	lamp_chan = sett->value("channel", 0).toUInt();
 	lamp_on_value = sett->value("on_value", 255).toUInt();
 	lamp_off_value = sett->value("off_value", 0).toUInt();
+	lamp_off_on_delay = sett->value("off_on_delay", 5000).toUInt();
 	sett->endGroup();
 
 	sett->beginGroup("dimmer");
@@ -166,6 +167,7 @@ void ModelData::SaveSettings(QSettings* sett) const
 	sett->setValue("channel", lamp_chan);
 	sett->setValue("on_value", lamp_on_value);
 	sett->setValue("off_value", lamp_off_value);
+	sett->setValue("off_on_delay", lamp_off_on_delay);
 	sett->endGroup();
 
 	sett->beginGroup("dimmer");
@@ -233,10 +235,6 @@ void ModelData::ChangeColor(QColor color, uint8_t dimmer) {
 		m_color->SetColorPixels(m_last_color);
 	}
 
-	if (0u != lamp_chan)
-	{
-		emit SetChannelData(lamp_chan, lamp_on_value);
-	}
 	if (0u != dimmer_chan)
 	{
 		emit SetChannelData(dimmer_chan, dimmer);
@@ -289,6 +287,31 @@ void ModelData::TogglePrism()
 	}
 	prism_on = !prism_on;
 	emit SetChannelData(prism_chan, prism_on ? prism_on_value : prism_off_value);
+}
+
+void ModelData::LampOn()
+{
+	if (0u == lamp_chan)
+	{
+		return;
+	}
+	prism_on = !prism_on;
+	emit SetChannelData(lamp_chan, lamp_on_value );
+
+	QTimer::singleShot(lamp_off_on_delay, this, [&]() {
+		emit SetChannelData(lamp_chan, 0);
+		});
+}
+void ModelData::LampOff()
+{
+	if (0u == lamp_chan)
+	{
+		return;
+	}
+	emit SetChannelData(lamp_chan, lamp_off_value);
+	QTimer::singleShot(lamp_off_on_delay, this, [&]() {
+		emit SetChannelData(lamp_chan, 0);
+		});
 }
 
 void ModelData::CalcPanTiltDMX(PTDataPoint& point)

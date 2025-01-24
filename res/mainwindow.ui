@@ -633,13 +633,25 @@
              <string>Lamp</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_7">
-             <item row="0" column="1" colspan="2">
-              <widget class="QPushButton" name="pushButtonColor">
-               <property name="text">
-                <string/>
+             <item row="1" column="2">
+              <widget class="QSlider" name="horizontalSliderBrightness">
+               <property name="maximum">
+                <number>255</number>
                </property>
-               <property name="flat">
+               <property name="value">
+                <number>127</number>
+               </property>
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="invertedAppearance">
                 <bool>false</bool>
+               </property>
+               <property name="invertedControls">
+                <bool>false</bool>
+               </property>
+               <property name="tickPosition">
+                <enum>QSlider::NoTicks</enum>
                </property>
               </widget>
              </item>
@@ -663,25 +675,27 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="2">
-              <widget class="QSlider" name="horizontalSliderBrightness">
-               <property name="maximum">
-                <number>255</number>
+             <item row="0" column="1" colspan="2">
+              <widget class="QPushButton" name="pushButtonColor">
+               <property name="text">
+                <string/>
                </property>
-               <property name="value">
-                <number>127</number>
-               </property>
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="invertedAppearance">
+               <property name="flat">
                 <bool>false</bool>
                </property>
-               <property name="invertedControls">
-                <bool>false</bool>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QPushButton" name="pushButtonLampOn">
+               <property name="text">
+                <string>Lamp On</string>
                </property>
-               <property name="tickPosition">
-                <enum>QSlider::NoTicks</enum>
+              </widget>
+             </item>
+             <item row="2" column="2">
+              <widget class="QPushButton" name="pushButtonLampOff">
+               <property name="text">
+                <string>Lamp Off</string>
                </property>
               </widget>
              </item>
